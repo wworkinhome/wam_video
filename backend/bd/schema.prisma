@@ -1,0 +1,725 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// Tenants (SaaS multi-tenant)
+// ─────────────────────────────────────────────
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  name      String
+  slug      String       @unique
+  domain    String?      @unique
+  status    TenantStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  branding  TenantBranding?
+  users     User[]
+  userRoles UserRole[]
+  plans     Plan[]
+  packages  ChannelPackage[]
+  movies    Movie[]
+  series    Series[]
+  channels  Channel[]
+  events    Event[]
+  genres    Genre[]
+  auditLogs AuditLog[]
+
+  @@map("tenants")
+}
+
+model TenantBranding {
+  id             String   @id @default(uuid())
+  tenantId       String   @unique @map("tenant_id")
+  logoUrl        String?  @map("logo_url")
+  faviconUrl     String?  @map("favicon_url")
+  primaryColor   String?  @map("primary_color")
+  secondaryColor String?  @map("secondary_color")
+  themeConfig    Json?    @map("theme_config")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_branding")
+}
+
+// ─────────────────────────────────────────────
+// Usuarios, roles y permisos
+// ─────────────────────────────────────────────
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+  DELETED
+}
+
+model User {
+  id              String     @id @default(uuid())
+  tenantId        String?    @map("tenant_id")
+  email           String     @unique
+  passwordHash    String     @map("password_hash")
+  name            String
+  avatarUrl       String?    @map("avatar_url")
+  status          UserStatus @default(PENDING_VERIFICATION)
+  emailVerifiedAt DateTime?  @map("email_verified_at")
+  lastLoginAt     DateTime?  @map("last_login_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  tenant                   Tenant?                 @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  roles                    UserRole[]
+  profiles                 Profile[]
+  devices                  Device[]
+  subscriptions            Subscription[]
+  payments                 Payment[]
+  comments                 Comment[]
+  auditLogs                AuditLog[]
+  notifications            Notification[]
+  hostedWatchParties       WatchParty[]            @relation("WatchPartyHost")
+  watchPartyParticipations WatchPartyParticipant[] @relation("WatchPartyParticipant")
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  permissions RolePermission[]
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  code        String  @unique
+  description String?
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// Asignación de rol a usuario, opcionalmente acotada a un tenant
+// (ROOT / Super Administrador no llevan tenantId; Administrador Tenant, Editor, etc. sí).
+model UserRole {
+  id       String  @id @default(uuid())
+  userId   String  @map("user_id")
+  roleId   String  @map("role_id")
+  tenantId String? @map("tenant_id")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, tenantId])
+  @@map("user_roles")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  isKids    Boolean  @default(false) @map("is_kids")
+  pinCode   String?  @map("pin_code")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history   WatchHistory[]
+  favorites Favorite[]
+  downloads DownloadRequest[]
+
+  @@map("profiles")
+}
+
+model Device {
+  id         String     @id @default(uuid())
+  userId     String     @map("user_id")
+  name       String
+  type       DeviceType
+  pushToken  String?    @map("push_token")
+  lastUsedAt DateTime?  @map("last_used_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  downloads DownloadRequest[]
+
+  @@map("devices")
+}
+
+enum DeviceType {
+  WEB
+  MOBILE_IOS
+  MOBILE_ANDROID
+  SMART_TV
+  TV_BOX
+  OTHER
+}
+
+// ─────────────────────────────────────────────
+// Catálogo: películas, series, temporadas, episodios
+// ─────────────────────────────────────────────
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// tenantId es requerido (a diferencia de una versión anterior con tenantId opcional):
+// Postgres no compara NULL = NULL en índices únicos, así que un tenantId nulable
+// habría hecho que @@unique([tenantId, slug]) no impidiera duplicados entre "géneros globales".
+model Genre {
+  id       String @id @default(uuid())
+  tenantId String @map("tenant_id")
+  name     String
+  slug     String
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  movies MovieGenre[]
+  series SeriesGenre[]
+
+  @@unique([tenantId, slug])
+  @@map("genres")
+}
+
+model Movie {
+  id              String        @id @default(uuid())
+  tenantId        String        @map("tenant_id")
+  title           String
+  slug            String
+  synopsis        String?
+  releaseYear     Int?          @map("release_year")
+  durationMinutes Int?          @map("duration_minutes")
+  posterUrl       String?       @map("poster_url")
+  backdropUrl     String?       @map("backdrop_url")
+  trailerUrl      String?       @map("trailer_url")
+  videoUrl        String?       @map("video_url")
+  isPremium       Boolean       @default(false) @map("is_premium")
+  status          ContentStatus @default(DRAFT)
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  genres       MovieGenre[]
+  comments     Comment[]
+  history      WatchHistory[]
+  favorites    Favorite[]
+  downloads    DownloadRequest[]
+  mediaTracks  MediaTrack[]
+  watchParties WatchParty[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("movies")
+}
+
+model MovieGenre {
+  movieId String @map("movie_id")
+  genreId String @map("genre_id")
+
+  movie Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([movieId, genreId])
+  @@map("movie_genres")
+}
+
+model Series {
+  id          String        @id @default(uuid())
+  tenantId    String        @map("tenant_id")
+  title       String
+  slug        String
+  synopsis    String?
+  posterUrl   String?       @map("poster_url")
+  backdropUrl String?       @map("backdrop_url")
+  isPremium   Boolean       @default(false) @map("is_premium")
+  status      ContentStatus @default(DRAFT)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  genres    SeriesGenre[]
+  seasons   Season[]
+  favorites Favorite[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("series")
+}
+
+model SeriesGenre {
+  seriesId String @map("series_id")
+  genreId  String @map("genre_id")
+
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  genre  Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+
+  @@id([seriesId, genreId])
+  @@map("series_genres")
+}
+
+model Season {
+  id       String  @id @default(uuid())
+  seriesId String  @map("series_id")
+  number   Int
+  title    String?
+
+  series   Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  episodes Episode[]
+
+  @@unique([seriesId, number])
+  @@map("seasons")
+}
+
+model Episode {
+  id              String    @id @default(uuid())
+  seasonId        String    @map("season_id")
+  number          Int
+  title           String
+  synopsis        String?
+  durationMinutes Int?      @map("duration_minutes")
+  videoUrl        String?   @map("video_url")
+  thumbnailUrl    String?   @map("thumbnail_url")
+  airDate         DateTime? @map("air_date")
+
+  season       Season            @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  comments     Comment[]
+  history      WatchHistory[]
+  downloads    DownloadRequest[]
+  mediaTracks  MediaTrack[]
+  watchParties WatchParty[]
+
+  @@unique([seasonId, number])
+  @@map("episodes")
+}
+
+enum MediaTrackType {
+  SUBTITLE
+  AUDIO
+}
+
+// Pista de subtítulo o audio alternativo; exactamente uno de movieId/episodeId por fila
+// (mismo patrón que Comment/WatchHistory, ver nota de esos modelos).
+model MediaTrack {
+  id        String         @id @default(uuid())
+  movieId   String?        @map("movie_id")
+  episodeId String?        @map("episode_id")
+  type      MediaTrackType
+  language  String
+  label     String?
+  url       String
+  isDefault Boolean        @default(false) @map("is_default")
+
+  movie   Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([movieId])
+  @@index([episodeId])
+  @@map("media_tracks")
+}
+
+// ─────────────────────────────────────────────
+// TV en vivo, EPG y eventos
+// ─────────────────────────────────────────────
+
+model Channel {
+  id                 String   @id @default(uuid())
+  tenantId           String   @map("tenant_id")
+  name               String
+  slug               String
+  logoUrl            String?  @map("logo_url")
+  streamUrl          String?  @map("stream_url")
+  category           String?
+  isPremium          Boolean  @default(false) @map("is_premium")
+  dvrEnabled         Boolean  @default(false) @map("dvr_enabled")
+  catchupWindowHours Int?     @map("catchup_window_hours")
+  timeshiftEnabled   Boolean  @default(false) @map("timeshift_enabled")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  epgPrograms     EpgProgram[]
+  packageChannels ChannelPackageChannel[]
+
+  @@unique([tenantId, slug])
+  @@map("channels")
+}
+
+model EpgProgram {
+  id          String   @id @default(uuid())
+  channelId   String   @map("channel_id")
+  title       String
+  description String?
+  category    String?
+  startTime   DateTime @map("start_time")
+  endTime     DateTime @map("end_time")
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, startTime])
+  @@map("epg_programs")
+}
+
+enum EventType {
+  LIVE
+  PPV
+}
+
+enum EventStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELED
+}
+
+model Event {
+  id          String      @id @default(uuid())
+  tenantId    String      @map("tenant_id")
+  title       String
+  description String?
+  type        EventType
+  status      EventStatus @default(SCHEDULED)
+  streamUrl   String?     @map("stream_url")
+  price       Decimal?    @db.Decimal(10, 2)
+  currency    String?     @default("USD")
+  startTime   DateTime    @map("start_time")
+  endTime     DateTime?   @map("end_time")
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  watchParties WatchParty[]
+
+  @@index([tenantId, startTime])
+  @@map("events")
+}
+
+// ─────────────────────────────────────────────
+// Planes, paquetes de canales, suscripciones y pagos
+// ─────────────────────────────────────────────
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+model Plan {
+  id              String          @id @default(uuid())
+  tenantId        String          @map("tenant_id")
+  name            String
+  description     String?
+  price           Decimal         @db.Decimal(10, 2)
+  currency        String          @default("USD")
+  billingInterval BillingInterval @map("billing_interval")
+  maxProfiles     Int             @default(1) @map("max_profiles")
+  maxDevices      Int             @default(1) @map("max_devices")
+  videoQuality    String?         @map("video_quality")
+  isActive        Boolean         @default(true) @map("is_active")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  packages      PlanPackage[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model ChannelPackage {
+  id          String  @id @default(uuid())
+  tenantId    String  @map("tenant_id")
+  name        String
+  description String?
+
+  tenant   Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  channels ChannelPackageChannel[]
+  plans    PlanPackage[]
+
+  @@map("channel_packages")
+}
+
+model ChannelPackageChannel {
+  packageId String @map("package_id")
+  channelId String @map("channel_id")
+
+  package ChannelPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  channel Channel        @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, channelId])
+  @@map("channel_package_channels")
+}
+
+model PlanPackage {
+  planId    String @map("plan_id")
+  packageId String @map("package_id")
+
+  plan    Plan           @relation(fields: [planId], references: [id], onDelete: Cascade)
+  package ChannelPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  @@id([planId, packageId])
+  @@map("plan_packages")
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+model Subscription {
+  id          String             @id @default(uuid())
+  userId      String             @map("user_id")
+  planId      String             @map("plan_id")
+  status      SubscriptionStatus @default(TRIALING)
+  startDate   DateTime           @map("start_date")
+  endDate     DateTime?          @map("end_date")
+  trialEndsAt DateTime?          @map("trial_ends_at")
+  autoRenew   Boolean            @default(true) @map("auto_renew")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan     Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments Payment[]
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  userId                String        @map("user_id")
+  subscriptionId        String?       @map("subscription_id")
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("USD")
+  status                PaymentStatus @default(PENDING)
+  provider              String
+  providerTransactionId String?       @map("provider_transaction_id")
+  paidAt                DateTime?     @map("paid_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────
+// Interacción: comentarios, historial, favoritos
+// ─────────────────────────────────────────────
+
+model Comment {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  movieId   String?  @map("movie_id")
+  episodeId String?  @map("episode_id")
+  content   String
+  isFlagged Boolean  @default(false) @map("is_flagged")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie   Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([movieId])
+  @@index([episodeId])
+  @@map("comments")
+}
+
+// Progreso de reproducción ("continuar viendo"); exactamente uno de movieId/episodeId se usa por fila.
+// @@unique no es 100% efectivo mientras uno de los dos FKs quede nulo (Postgres no compara NULL = NULL):
+// no puede resolverse solo desde schema.prisma (requeriría un índice parcial vía SQL de migración a mano).
+// La deduplicación real se hace en WatchHistoryService (buscar-antes-de-insertar) cuando se construya el módulo.
+model WatchHistory {
+  id              String   @id @default(uuid())
+  profileId       String   @map("profile_id")
+  movieId         String?  @map("movie_id")
+  episodeId       String?  @map("episode_id")
+  progressSeconds Int      @default(0) @map("progress_seconds")
+  durationSeconds Int?     @map("duration_seconds")
+  completed       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  profile Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  movie   Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, movieId, episodeId])
+  @@map("watch_history")
+}
+
+// Favorito; exactamente uno de movieId/seriesId se usa por fila.
+// Mismo caveat que WatchHistory: @@unique no cubre el caso de FK nulo; se refuerza en FavoritesService.
+model Favorite {
+  id        String   @id @default(uuid())
+  profileId String   @map("profile_id")
+  movieId   String?  @map("movie_id")
+  seriesId  String?  @map("series_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  movie   Movie?  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  series  Series? @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, movieId, seriesId])
+  @@map("favorites")
+}
+
+// ─────────────────────────────────────────────
+// Auditoría
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?  @map("actor_id")
+  tenantId   String?  @map("tenant_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// Notificaciones y descargas
+// ─────────────────────────────────────────────
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  IN_APP
+}
+
+model Notification {
+  id        String              @id @default(uuid())
+  userId    String              @map("user_id")
+  channel   NotificationChannel
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?           @map("read_at")
+  createdAt DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+enum DownloadStatus {
+  REQUESTED
+  READY
+  EXPIRED
+  REVOKED
+}
+
+// Sin @@unique compuesto a propósito: un perfil puede tener varias solicitudes de
+// descarga del mismo contenido a lo largo del tiempo (expiradas, revocadas, renovadas).
+model DownloadRequest {
+  id        String         @id @default(uuid())
+  profileId String         @map("profile_id")
+  deviceId  String         @map("device_id")
+  movieId   String?        @map("movie_id")
+  episodeId String?        @map("episode_id")
+  status    DownloadStatus @default(REQUESTED)
+  expiresAt DateTime?      @map("expires_at")
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  profile Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  device  Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  movie   Movie?   @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode Episode? @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, status])
+  @@map("download_requests")
+}
+
+// ─────────────────────────────────────────────
+// Watch Party
+// ─────────────────────────────────────────────
+
+enum WatchPartyStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+// Sesión sincronizada de reproducción grupal; exactamente uno de movieId/episodeId/eventId por fila.
+model WatchParty {
+  id         String           @id @default(uuid())
+  hostUserId String           @map("host_user_id")
+  movieId    String?          @map("movie_id")
+  episodeId  String?          @map("episode_id")
+  eventId    String?          @map("event_id")
+  status     WatchPartyStatus @default(SCHEDULED)
+  code       String           @unique
+  startedAt  DateTime?        @map("started_at")
+  endedAt    DateTime?        @map("ended_at")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  host         User                    @relation("WatchPartyHost", fields: [hostUserId], references: [id], onDelete: Cascade)
+  movie        Movie?                  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  episode      Episode?                @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  event        Event?                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participants WatchPartyParticipant[]
+
+  @@map("watch_parties")
+}
+
+model WatchPartyParticipant {
+  watchPartyId String   @map("watch_party_id")
+  userId       String   @map("user_id")
+  joinedAt     DateTime @default(now()) @map("joined_at")
+
+  watchParty WatchParty @relation(fields: [watchPartyId], references: [id], onDelete: Cascade)
+  user       User       @relation("WatchPartyParticipant", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([watchPartyId, userId])
+  @@map("watch_party_participants")
+}

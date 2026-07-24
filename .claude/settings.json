@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(curl -s \"https://supabase.com/docs/reference/api/v1-update-postgres-config\")"
+    ]
+  }
+}
