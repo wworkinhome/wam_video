@@ -45,6 +45,18 @@ export function HeaderShell({ user }: { user: CurrentUser | null }) {
             <Link href="/canales" className="transition-colors hover:text-white">
               TV en Vivo
             </Link>
+            <Link href="/canales?category=Deportes" className="transition-colors hover:text-white">
+              Deportes
+            </Link>
+            <Link href="/canales?category=Noticias" className="transition-colors hover:text-white">
+              Noticias
+            </Link>
+            <Link href="/canales?category=Música" className="transition-colors hover:text-white">
+              Música
+            </Link>
+            <Link href="/canales?category=Kids" className="transition-colors hover:text-white">
+              Kids
+            </Link>
             {user && (
               <>
                 <Link href="/continuar-viendo" className="transition-colors hover:text-white">

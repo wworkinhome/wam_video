@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import Hls from 'hls.js';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
+import { CHANNEL_CATEGORIES } from '@/lib/channel-categories';
 import type { Tenant } from '@/lib/api/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -141,10 +142,16 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
         <Label htmlFor="category">Categoría</Label>
         <Input
           id="category"
+          list="channel-categories"
           value={category}
           onChange={(event) => setCategory(event.target.value)}
-          placeholder="Deportes, Noticias, Entretenimiento…"
+          placeholder="Deportes, Noticias, Música, Kids…"
         />
+        <datalist id="channel-categories">
+          {CHANNEL_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat} />
+          ))}
+        </datalist>
       </div>
 
       <div className="flex flex-col gap-1.5">
