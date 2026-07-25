@@ -16,13 +16,13 @@ export default async function MoviesPage({
   const totalPages = Math.max(1, Math.ceil(result.total / result.limit));
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Películas</h1>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-10 sm:px-8">
+      <h1 className="text-2xl font-bold text-white">Películas</h1>
 
       {result.data.length === 0 ? (
-        <p className="text-muted-foreground">Todavía no hay películas publicadas.</p>
+        <p className="text-white/60">Todavía no hay películas publicadas.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {result.data.map((movie) => (
             <MovieCard key={movie.id} movie={movie} />
           ))}

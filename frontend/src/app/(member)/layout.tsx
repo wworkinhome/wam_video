@@ -14,7 +14,9 @@ export default async function MemberLayout({ children }: { children: React.React
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+      <main className="flex-1 bg-black pt-20">
+        <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-8">{children}</div>
+      </main>
     </>
   );
 }
