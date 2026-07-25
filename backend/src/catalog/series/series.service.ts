@@ -44,6 +44,7 @@ export class SeriesService {
     const where: Prisma.SeriesWhereInput = {
       status: ContentStatus.PUBLISHED,
       tenantId: query.tenantId,
+      slug: query.slug,
       genres: query.genreId ? { some: { genreId: query.genreId } } : undefined,
     };
     const [data, total] = await Promise.all([

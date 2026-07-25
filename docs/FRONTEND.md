@@ -1,6 +1,8 @@
 # WAMVIDEO — Frontend y su conexión con el backend
 
-Estado: **planeación** — `frontend/` todavía no existe como carpeta en el repo. Este documento define la estructura propuesta y cómo se conectará a la API NestJS ya construida en `backend/`. Se actualiza a medida que se construye, igual que [ARCHITECTURE.md](./ARCHITECTURE.md).
+Estado: **construido** (scaffold funcional end-to-end contra el backend real de Supabase — auth, catálogo público, y área de miembro completa). Quedan fuera de este scaffold, deliberadamente: panel admin/CMS, Canales/EPG/Eventos/Pagos/Suscripciones/Notificaciones (sus módulos de backend no existen todavía), descargas (más propio de apps móviles/TV), y sincronización en vivo de Watch Party (el backend es solo REST). Este documento se actualiza a medida que se construye, igual que [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+Stack real usado: Next.js 16 (App Router, Turbopack) + TypeScript, Tailwind CSS v4 + shadcn/ui (estilo "base-nova", sobre `@base-ui/react` en vez de Radix), TanStack Query, hls.js. Next.js 16 renombró `middleware.ts` → `proxy.ts` (mismo comportamiento) — el archivo real de este proyecto es `frontend/src/proxy.ts`.
 
 Stack según el documento maestro: **Next.js**, desplegado en **Vercel**. `frontend/` es un proyecto hermano de `backend/` — no comparten `node_modules` ni código; la única frontera entre ambos es la API HTTP.
 

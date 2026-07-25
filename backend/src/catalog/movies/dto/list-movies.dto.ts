@@ -1,4 +1,4 @@
-import { IsOptional, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class ListMoviesDto extends PaginationQueryDto {
@@ -9,4 +9,8 @@ export class ListMoviesDto extends PaginationQueryDto {
   @IsOptional()
   @IsUUID()
   genreId?: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 }

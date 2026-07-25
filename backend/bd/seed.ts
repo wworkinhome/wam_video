@@ -1,6 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ContentStatus } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+
+// Stream HLS público de prueba (Apple bipbop) — solo para que el reproductor del
+// frontend tenga algo real que reproducir en desarrollo. No usar en producción.
+const DEMO_STREAM_URL = 'https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_4x3/bipbop_4x3_variant.m3u8';
+const DEMO_TENANT_SLUG = 'demo';
+const DEMO_ROOT_EMAIL = 'root@wamvideo.local';
+const DEMO_ROOT_PASSWORD = 'ChangeMe123!'; // dev-only, documentado en README/FRONTEND.md
 
 // Permisos base del sistema, agrupados por recurso.
 const PERMISSIONS = [
@@ -157,7 +165,98 @@ async function main() {
     }
   }
 
+  await seedDemoData();
+
   console.log(`Seed completo: ${PERMISSIONS.length} permisos, ${ROLES.length} roles.`);
+}
+
+// Tenant + usuario ROOT + catálogo demo, todo vía upsert (idempotente), para que
+// `npm run prisma:seed` deje un entorno de desarrollo con datos reales para el frontend.
+async function seedDemoData() {
+  const tenant = await prisma.tenant.upsert({
+    where: { slug: DEMO_TENANT_SLUG },
+    update: {},
+    create: { name: 'Demo Tenant', slug: DEMO_TENANT_SLUG },
+  });
+
+  const passwordHash = await bcrypt.hash(DEMO_ROOT_PASSWORD, 10);
+  const rootUser = await prisma.user.upsert({
+    where: { email: DEMO_ROOT_EMAIL },
+    update: {},
+    create: {
+      email: DEMO_ROOT_EMAIL,
+      passwordHash,
+      name: 'Demo Root',
+      status: 'ACTIVE',
+      emailVerifiedAt: new Date(),
+    },
+  });
+
+  const rootRole = await prisma.role.findUniqueOrThrow({ where: { name: 'ROOT' } });
+  const existingRootAssignment = await prisma.userRole.findFirst({
+    where: { userId: rootUser.id, roleId: rootRole.id, tenantId: null },
+  });
+  if (!existingRootAssignment) {
+    // tenantId null = rol global (ROOT aplica a todos los tenants, ver JwtStrategy).
+    await prisma.userRole.create({ data: { userId: rootUser.id, roleId: rootRole.id, tenantId: null } });
+  }
+
+  const movies = [
+    { slug: 'demo-bipbop', title: 'Demo: Big Buck Bunny (BipBop)', isPremium: false },
+    { slug: 'demo-bipbop-2', title: 'Demo: Segunda película', isPremium: false },
+    { slug: 'demo-premium', title: 'Demo Premium (requiere suscripción)', isPremium: true },
+  ];
+  for (const movie of movies) {
+    await prisma.movie.upsert({
+      where: { tenantId_slug: { tenantId: tenant.id, slug: movie.slug } },
+      update: { status: ContentStatus.PUBLISHED },
+      create: {
+        tenantId: tenant.id,
+        title: movie.title,
+        slug: movie.slug,
+        synopsis: 'Contenido de demostración para desarrollo local.',
+        videoUrl: DEMO_STREAM_URL,
+        posterUrl: null,
+        isPremium: movie.isPremium,
+        status: ContentStatus.PUBLISHED,
+      },
+    });
+  }
+
+  const series = await prisma.series.upsert({
+    where: { tenantId_slug: { tenantId: tenant.id, slug: 'demo-series' } },
+    update: { status: ContentStatus.PUBLISHED },
+    create: {
+      tenantId: tenant.id,
+      title: 'Demo: Serie de prueba',
+      slug: 'demo-series',
+      synopsis: 'Serie de demostración para desarrollo local.',
+      isPremium: false,
+      status: ContentStatus.PUBLISHED,
+    },
+  });
+
+  const season = await prisma.season.upsert({
+    where: { seriesId_number: { seriesId: series.id, number: 1 } },
+    update: {},
+    create: { seriesId: series.id, number: 1, title: 'Temporada 1' },
+  });
+
+  await prisma.episode.upsert({
+    where: { seasonId_number: { seasonId: season.id, number: 1 } },
+    update: {},
+    create: {
+      seasonId: season.id,
+      number: 1,
+      title: 'Episodio 1',
+      synopsis: 'Episodio de demostración.',
+      videoUrl: DEMO_STREAM_URL,
+    },
+  });
+
+  console.log(
+    `Demo listo: tenant "${DEMO_TENANT_SLUG}", usuario ROOT "${DEMO_ROOT_EMAIL}" / "${DEMO_ROOT_PASSWORD}", ${movies.length} películas + 1 serie publicadas.`,
+  );
 }
 
 main()
