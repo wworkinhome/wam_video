@@ -4,13 +4,14 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Hls from 'hls.js';
-import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
+import { Radio, Tv } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
 import { CHANNEL_CATEGORIES } from '@/lib/channel-categories';
 import type { Tenant } from '@/lib/api/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 type TestStatus = 'idle' | 'testing' | 'ok' | 'error';
 
@@ -159,43 +160,56 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
         <Input id="logoUrl" value={logoUrl} onChange={(event) => setLogoUrl(event.target.value)} />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="streamUrl">Stream (m3u8)</Label>
-        <div className="flex gap-2">
-          <Input
-            id="streamUrl"
-            value={streamUrl}
-            onChange={(event) => {
-              setStreamUrl(event.target.value);
-              setTestStatus('idle');
-            }}
-            placeholder="https://.../master.m3u8"
-          />
-          <Button type="button" variant="outline" onClick={handleTest} disabled={!streamUrl.trim()}>
-            Probar
-          </Button>
+      <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 font-semibold text-white">
+            <Radio className="size-5 text-red-500" />
+            Señal del canal
+          </div>
+          <span
+            className={cn(
+              'rounded-full px-2.5 py-1 text-xs font-medium',
+              testStatus === 'idle' && 'bg-white/10 text-white/50',
+              testStatus === 'testing' && 'bg-amber-500/20 text-amber-300',
+              testStatus === 'ok' && 'bg-emerald-500/20 text-emerald-300',
+              testStatus === 'error' && 'bg-red-500/20 text-red-300',
+            )}
+          >
+            {testStatus === 'idle' && 'SIN PROBAR'}
+            {testStatus === 'testing' && 'PROBANDO…'}
+            {testStatus === 'ok' && '● EN VIVO'}
+            {testStatus === 'error' && 'SIN SEÑAL'}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="streamUrl">Stream (m3u8)</Label>
+          <div className="flex gap-2">
+            <Input
+              id="streamUrl"
+              value={streamUrl}
+              onChange={(event) => {
+                setStreamUrl(event.target.value);
+                setTestStatus('idle');
+              }}
+              placeholder="https://.../master.m3u8"
+            />
+            <Button type="button" variant="outline" onClick={handleTest} disabled={!streamUrl.trim()}>
+              Probar
+            </Button>
+          </div>
+        </div>
+
+        <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-black">
+          <video ref={videoRef} controls className="h-full w-full" />
+          {testStatus === 'idle' && (
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black text-white/40">
+              <Tv className="size-8" />
+              <p className="px-4 text-center text-sm">Ingresá una URL y presioná "Probar" para previsualizar</p>
+            </div>
+          )}
         </div>
       </div>
-
-      <div className="flex items-center gap-2 text-sm">
-        {testStatus === 'testing' && (
-          <span className="flex items-center gap-1.5 text-white/60">
-            <Loader2 className="size-4 animate-spin" /> Probando señal…
-          </span>
-        )}
-        {testStatus === 'ok' && (
-          <span className="flex items-center gap-1.5 text-emerald-400">
-            <CheckCircle2 className="size-4" /> La señal carga correctamente
-          </span>
-        )}
-        {testStatus === 'error' && (
-          <span className="flex items-center gap-1.5 text-red-400">
-            <XCircle className="size-4" /> No se pudo cargar esta URL
-          </span>
-        )}
-      </div>
-
-      <video ref={videoRef} controls className="aspect-video w-full rounded-lg bg-black" />
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={isPremium} onChange={(event) => setIsPremium(event.target.checked)} />
