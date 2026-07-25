@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { LogoutButton } from './logout-button';
+import { hasPermission } from '@/lib/auth/permissions';
 import type { CurrentUser } from '@/lib/api/types';
 
 export function HeaderShell({ user }: { user: CurrentUser | null }) {
@@ -41,6 +42,9 @@ export function HeaderShell({ user }: { user: CurrentUser | null }) {
             <Link href="/series" className="transition-colors hover:text-white">
               Series
             </Link>
+            <Link href="/canales" className="transition-colors hover:text-white">
+              TV en Vivo
+            </Link>
             {user && (
               <>
                 <Link href="/continuar-viendo" className="transition-colors hover:text-white">
@@ -49,6 +53,11 @@ export function HeaderShell({ user }: { user: CurrentUser | null }) {
                 <Link href="/watch-party" className="transition-colors hover:text-white">
                   Watch Party
                 </Link>
+                {hasPermission(user, 'channels.manage') && (
+                  <Link href="/admin/canales" className="transition-colors hover:text-white">
+                    Admin
+                  </Link>
+                )}
               </>
             )}
           </nav>

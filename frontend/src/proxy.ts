@@ -5,7 +5,7 @@ import { SESSION_COOKIE, TENANT_ID_HEADER, TENANT_SLUG_HEADER } from './lib/cons
 
 // Next.js 16 renombró "middleware" a "proxy" (mismo comportamiento, nuevo nombre
 // de archivo/función) — ver docs/FRONTEND.md.
-const PROTECTED_PREFIXES = ['/perfiles', '/favoritos', '/continuar-viendo', '/ver', '/watch-party'];
+const PROTECTED_PREFIXES = ['/perfiles', '/favoritos', '/continuar-viendo', '/ver', '/watch-party', '/admin'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

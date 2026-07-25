@@ -36,7 +36,7 @@ Documentación relacionada: esquema completo de la base de datos en [DATABASE.md
 
 | Módulo | Estado | Notas |
 |---|---|---|
-| ChannelsModule | ⬜ | Tabla `Channel` ya existe, incluye flags `dvrEnabled`/`catchupWindowHours`/`timeshiftEnabled`. |
+| ChannelsModule | ✅ | CRUD público (list/detail) + protegido (`channels.manage`) igual que Genres. Incluye flags `dvrEnabled`/`catchupWindowHours`/`timeshiftEnabled` en el modelo, pero **sin backend todavía** para DVR/catch-up/timeshift en sí — son solo metadata hoy. Frontend: `/canales`, `/canales/[slug]`, fila "TV en Vivo" en landing, y alta desde `/admin/canales/nuevo` con preview de la señal (hls.js) antes de guardar. |
 | EpgModule | ⬜ | Tabla `EpgProgram` ya existe. |
 | EventsModule | ⬜ | Tabla `Event` ya existe (LIVE/PPV). |
 | ChannelPackagesModule | ⬜ | Tablas `ChannelPackage`/`ChannelPackageChannel`/`PlanPackage` ya existen. |

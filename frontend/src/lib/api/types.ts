@@ -90,6 +90,28 @@ export interface Series {
   seasons?: Season[];
 }
 
+export interface Tenant {
+  id: string;
+  name: string;
+  slug: string;
+  domain: string | null;
+  status: string;
+}
+
+export interface Channel {
+  id: string;
+  tenantId: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  streamUrl: string | null;
+  category: string | null;
+  isPremium: boolean;
+  dvrEnabled: boolean;
+  catchupWindowHours: number | null;
+  timeshiftEnabled: boolean;
+}
+
 export interface MediaTrack {
   id: string;
   type: 'SUBTITLE' | 'AUDIO';

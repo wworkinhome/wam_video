@@ -10,7 +10,9 @@
       "Bash(rm -f cleanup-verify.tmp.js)",
       "Bash(curl -s http://localhost:3000/health)",
       "Bash(node promote-superadmin.tmp.js)",
-      "Bash(rm -f promote-superadmin.tmp.js)"
+      "Bash(rm -f promote-superadmin.tmp.js)",
+      "Bash(curl -s -o /dev/null -w \"backend: %{http_code}\\\\n\" http://localhost:3000/health)",
+      "Bash(curl -s -o /dev/null -w \"frontend: %{http_code}\\\\n\" http://localhost:3001/)"
     ]
   }
 }
