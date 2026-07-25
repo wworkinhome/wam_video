@@ -7,7 +7,10 @@
       "Bash(mkdir -p /c/Users/Usuario/AppData/Local/Temp/claude/d--desarrollo-web-WAMVIDEO/947a32c3-0033-4282-96f4-63376e302ca4/scratchpad/verify)",
       "Bash(npm init *)",
       "Bash(node cleanup-verify.tmp.js)",
-      "Bash(rm -f cleanup-verify.tmp.js)"
+      "Bash(rm -f cleanup-verify.tmp.js)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(node promote-superadmin.tmp.js)",
+      "Bash(rm -f promote-superadmin.tmp.js)"
     ]
   }
 }
