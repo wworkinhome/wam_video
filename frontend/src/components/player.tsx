@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Hls from 'hls.js';
 import { usePlaybackHeartbeat } from '@/hooks/use-playback-heartbeat';
+import { cn } from '@/lib/utils';
 import type { MediaTrack } from '@/lib/api/types';
 
 interface PlayerProps {
@@ -12,6 +13,7 @@ interface PlayerProps {
   episodeId?: string;
   mediaTracks?: MediaTrack[];
   initialProgressSeconds?: number;
+  className?: string;
 }
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
@@ -23,6 +25,7 @@ export function Player({
   episodeId,
   mediaTracks = [],
   initialProgressSeconds,
+  className,
 }: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const heartbeat = usePlaybackHeartbeat();
@@ -76,7 +79,11 @@ export function Player({
   }, [profileId, movieId, episodeId]);
 
   return (
-    <video ref={videoRef} controls className="aspect-video w-full rounded-lg bg-black">
+    <video
+      ref={videoRef}
+      controls
+      className={cn('aspect-video w-full rounded-lg bg-black', className)}
+    >
       {mediaTracks
         .filter((track) => track.type === 'SUBTITLE')
         .map((track) => (

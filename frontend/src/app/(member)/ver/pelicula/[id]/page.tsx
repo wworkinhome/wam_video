@@ -1,8 +1,8 @@
 import { notFound, redirect } from 'next/navigation';
 import { getActiveProfileId } from '@/lib/auth/active-profile';
 import { serverFetch } from '@/lib/api/server';
-import { ApiError, type PlaybackInfo } from '@/lib/api/types';
-import { Player } from '@/components/player';
+import { ApiError, type PlaybackInfo, type WatchHistoryItem } from '@/lib/api/types';
+import { FullscreenPlayer } from '@/components/fullscreen-player';
 
 export default async function WatchMoviePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,14 +29,29 @@ export default async function WatchMoviePage({ params }: { params: Promise<{ id:
     throw error;
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">{playback.title}</h1>
-      {playback.videoUrl ? (
-        <Player src={playback.videoUrl} profileId={profileId} movieId={id} mediaTracks={playback.mediaTracks} />
-      ) : (
+  // Reanudar desde donde quedó ("continuar viendo"), si hay progreso guardado.
+  const savedProgress = await serverFetch<WatchHistoryItem | null>(
+    `/profiles/${profileId}/continue-watching/progress?movieId=${id}`,
+    { withTenant: false },
+  ).catch(() => null);
+
+  if (!playback.videoUrl) {
+    return (
+      <div className="flex flex-col items-center gap-2 py-16 text-center">
+        <h1 className="text-xl font-semibold">{playback.title}</h1>
         <p className="text-muted-foreground">Este contenido no tiene un video disponible.</p>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  return (
+    <FullscreenPlayer
+      title={playback.title}
+      src={playback.videoUrl}
+      profileId={profileId}
+      movieId={id}
+      mediaTracks={playback.mediaTracks}
+      initialProgressSeconds={savedProgress?.progressSeconds}
+    />
   );
 }
