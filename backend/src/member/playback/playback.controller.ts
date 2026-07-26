@@ -12,12 +12,12 @@ export class PlaybackController {
 
   @Get('movies/:movieId')
   getMovie(@Param('movieId') movieId: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.playbackService.getMoviePlayback(user.id, movieId);
+    return this.playbackService.getMoviePlayback(user, movieId);
   }
 
   @Get('episodes/:episodeId')
   getEpisode(@Param('episodeId') episodeId: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.playbackService.getEpisodePlayback(user.id, episodeId);
+    return this.playbackService.getEpisodePlayback(user, episodeId);
   }
 
   @Post('heartbeat')

@@ -8,6 +8,7 @@
     "prisma:validate": "prisma validate",
     "prisma:studio": "prisma studio",
     "prisma:seed": "prisma db seed",
+    "epg:import": "node scripts/import-epg.js",
     "build": "nest build",
     "start": "nest start",
     "start:dev": "nest start --watch",

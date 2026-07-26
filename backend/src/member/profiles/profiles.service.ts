@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { Profile } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { handlePrismaWrite } from '../../common/prisma-errors.util';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { VerifyPinDto } from './dto/verify-pin.dto';
 
 const CONFLICT_MESSAGE = 'Could not save profile';
 
@@ -57,6 +58,19 @@ export class ProfilesService {
   async remove(userId: string, id: string) {
     await this.getOwnedOrThrow(userId, id);
     await this.prisma.profile.delete({ where: { id } });
+  }
+
+  // El hash nunca sale del backend — el frontend solo recibe true/false.
+  async verifyPin(userId: string, id: string, dto: VerifyPinDto) {
+    const profile = await this.getOwnedOrThrow(userId, id);
+    if (!profile.pinCode) {
+      return { valid: true };
+    }
+    const valid = await bcrypt.compare(dto.pin, profile.pinCode);
+    if (!valid) {
+      throw new ForbiddenException('Incorrect PIN');
+    }
+    return { valid: true };
   }
 
   // Usado por Favorites/WatchHistory/Downloads/Playback para confirmar que el

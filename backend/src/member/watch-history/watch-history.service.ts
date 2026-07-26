@@ -38,6 +38,16 @@ export class WatchHistoryService {
     return { data, total, page: query.page, limit: query.limit };
   }
 
+  // Progreso guardado de UN movie/episode puntual (para reanudar el reproductor donde
+  // quedó, sin tener que traer toda la lista de "continuar viendo").
+  async findProgress(userId: string, profileId: string, input: { movieId?: string; episodeId?: string }) {
+    this.assertExactlyOne(input);
+    await this.profilesService.assertOwnership(userId, profileId);
+    return this.prisma.watchHistory.findFirst({
+      where: { profileId, movieId: input.movieId ?? null, episodeId: input.episodeId ?? null },
+    });
+  }
+
   // Llamado desde PlaybackModule en cada heartbeat del reproductor. No valida
   // ownership del profileId — eso ya lo hizo PlaybackService antes de llamar aquí.
   async upsertProgress(profileId: string, input: UpsertWatchHistoryInput) {

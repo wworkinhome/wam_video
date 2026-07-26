@@ -41,6 +41,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           include: { role: { include: { permissions: { include: { permission: true } } } } },
         },
       },
+      // Sin esto, Prisma resuelve cada nivel de include con un round-trip separado a la
+      // base de datos; con la latencia cross-region a Supabase eso sumaba ~1.8s en CADA
+      // request autenticado. relationLoadStrategy:'join' lo colapsa a un solo JOIN.
+      relationLoadStrategy: 'join',
     });
 
     if (!user || user.status !== UserStatus.ACTIVE) {

@@ -77,7 +77,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3000   # dev; en prod, la URL de Railway/Co
 
 Los tres bloqueantes que se habían detectado auditando `backend/src/` (CORS, identidad tras login, resolución de tenant) ya están resueltos:
 
-1. **CORS habilitado.** `main.ts` llama a `app.enableCors({ origin: frontendUrls, credentials: true })`, leyendo los orígenes permitidos de `FRONTEND_URL` (coma-separados; default `http://localhost:3001`). Configurar `FRONTEND_URL` en `backend/.env` para que incluya la URL real del frontend en cada entorno (dev/staging/prod).
+1. **CORS habilitado.** `main.ts` llama a `app.enableCors({ origin: frontendUrls, credentials: true })`, leyendo los orígenes permitidos de `FRONTEND_URL` (coma-separados; default `http://localhost:3005`). Configurar `FRONTEND_URL` en `backend/.env` para que incluya la URL real del frontend en cada entorno (dev/staging/prod).
 2. **`GET /auth/me`** (requiere `Authorization: Bearer`) devuelve `{ id, email, name, avatarUrl, status, tenant: { id, name, slug } | null, globalPermissions, tenantPermissions }`. Es la llamada que el frontend hace justo después de guardar el JWT (o en cada carga de página) para saber quién es el usuario y qué puede ver.
 3. **`GET /tenants/resolve?domain=...` / `?slug=...`** (público, sin JWT) devuelve `{ id, name, slug, domain, branding }` para un tenant `ACTIVE`, o `404` si no existe/está suspendido. Este es el endpoint que `middleware.ts` debe llamar para mapear el `Host` de la request a un `tenantId`.
 

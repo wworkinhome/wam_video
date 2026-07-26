@@ -30,6 +30,20 @@ export class MoviesController {
     return this.moviesService.findAllPublished(query);
   }
 
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('content.manage')
+  findAllForAdmin(@Query() query: ListMoviesDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.moviesService.findAllForAdmin(query, user);
+  }
+
+  @Get('admin/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('content.manage')
+  findOneForAdmin(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.moviesService.findOneForAdmin(id, user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.moviesService.findOnePublished(id);

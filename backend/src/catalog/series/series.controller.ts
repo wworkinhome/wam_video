@@ -30,6 +30,20 @@ export class SeriesController {
     return this.seriesService.findAllPublished(query);
   }
 
+  @Get('admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('content.manage')
+  findAllForAdmin(@Query() query: ListSeriesDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.seriesService.findAllForAdmin(query, user);
+  }
+
+  @Get('admin/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('content.manage')
+  findOneForAdmin(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.seriesService.findOneForAdmin(id, user);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.seriesService.findOnePublished(id);

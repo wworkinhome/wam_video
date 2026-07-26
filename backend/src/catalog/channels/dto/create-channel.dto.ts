@@ -27,6 +27,11 @@ export class CreateChannelDto {
   category?: string;
 
   @IsOptional()
+  @IsString()
+  @Matches(/^[A-Z]{2}$/, { message: 'country must be an ISO 3166-1 alpha-2 code (e.g. "CO")' })
+  country?: string;
+
+  @IsOptional()
   @IsBoolean()
   isPremium?: boolean;
 

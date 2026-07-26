@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString, IsUUID } from 'class-validator';
 import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
 export class ListMoviesDto extends PaginationQueryDto {
@@ -13,4 +14,17 @@ export class ListMoviesDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   slug?: string;
+
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  isKids?: boolean;
 }

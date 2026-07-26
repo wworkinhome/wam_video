@@ -1,6 +1,8 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ContentStatus, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { TenantAccessService } from '../../auth/tenant-access.service';
+import { AuthenticatedUser } from '../../auth/strategies/jwt.strategy';
 import { ProfilesService } from '../profiles/profiles.service';
 import { WatchHistoryService } from '../watch-history/watch-history.service';
 import { PlaybackHeartbeatDto } from './dto/playback-heartbeat.dto';
@@ -11,16 +13,18 @@ const ENTITLEMENT_MESSAGE = 'An active subscription is required to watch this co
 export class PlaybackService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly tenantAccess: TenantAccessService,
     private readonly profilesService: ProfilesService,
     private readonly watchHistoryService: WatchHistoryService,
   ) {}
 
-  async getMoviePlayback(userId: string, movieId: string) {
+  async getMoviePlayback(user: AuthenticatedUser, movieId: string) {
     const movie = await this.prisma.movie.findFirst({ where: { id: movieId, status: ContentStatus.PUBLISHED } });
     if (!movie) {
       throw new NotFoundException(`Movie ${movieId} not found`);
     }
-    if (movie.isPremium && !(await this.hasActiveSubscription(userId))) {
+    const isStaff = this.tenantAccess.hasTenantPermission(user, movie.tenantId, 'content.manage');
+    if (movie.isPremium && !isStaff && !(await this.hasActiveSubscription(user.id))) {
       throw new ForbiddenException(ENTITLEMENT_MESSAGE);
     }
     const mediaTracks = await this.prisma.mediaTrack.findMany({ where: { movieId } });
@@ -33,7 +37,7 @@ export class PlaybackService {
     };
   }
 
-  async getEpisodePlayback(userId: string, episodeId: string) {
+  async getEpisodePlayback(user: AuthenticatedUser, episodeId: string) {
     const episode = await this.prisma.episode.findFirst({
       where: { id: episodeId, season: { series: { status: ContentStatus.PUBLISHED } } },
       include: { season: { include: { series: true } } },
@@ -41,7 +45,8 @@ export class PlaybackService {
     if (!episode) {
       throw new NotFoundException(`Episode ${episodeId} not found`);
     }
-    if (episode.season.series.isPremium && !(await this.hasActiveSubscription(userId))) {
+    const isStaff = this.tenantAccess.hasTenantPermission(user, episode.season.series.tenantId, 'content.manage');
+    if (episode.season.series.isPremium && !isStaff && !(await this.hasActiveSubscription(user.id))) {
       throw new ForbiddenException(ENTITLEMENT_MESSAGE);
     }
     const mediaTracks = await this.prisma.mediaTrack.findMany({ where: { episodeId } });

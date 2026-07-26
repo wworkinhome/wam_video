@@ -45,8 +45,16 @@ export class CreateMovieDto {
   videoUrl?: string;
 
   @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
   @IsBoolean()
   isPremium?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isKids?: boolean;
 
   @IsOptional()
   @IsArray()

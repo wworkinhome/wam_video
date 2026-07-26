@@ -27,6 +27,8 @@ export class ChannelsService {
       tenantId: query.tenantId,
       slug: query.slug,
       category: query.category,
+      country: query.country,
+      name: query.q ? { contains: query.q, mode: 'insensitive' } : undefined,
     };
     const [data, total] = await Promise.all([
       this.prisma.channel.findMany({

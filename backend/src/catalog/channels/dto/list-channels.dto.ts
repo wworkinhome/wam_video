@@ -13,4 +13,12 @@ export class ListChannelsDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   category?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  q?: string;
 }

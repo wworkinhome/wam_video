@@ -29,6 +29,7 @@ export class MoviesService {
             genres: genreIds ? { create: genreIds.map((genreId) => ({ genreId })) } : undefined,
           },
           include: MOVIE_INCLUDE,
+          relationLoadStrategy: 'join',
         }),
       CONFLICT_MESSAGE,
     );
@@ -40,6 +41,9 @@ export class MoviesService {
       tenantId: query.tenantId,
       slug: query.slug,
       genres: query.genreId ? { some: { genreId: query.genreId } } : undefined,
+      title: query.q ? { contains: query.q, mode: 'insensitive' } : undefined,
+      category: query.category,
+      isKids: query.isKids,
     };
     const [data, total] = await Promise.all([
       this.prisma.movie.findMany({
@@ -48,16 +52,51 @@ export class MoviesService {
         take: query.limit,
         orderBy: { createdAt: 'desc' },
         include: MOVIE_INCLUDE,
+        relationLoadStrategy: 'join',
       }),
       this.prisma.movie.count({ where }),
     ]);
     return { data, total, page: query.page, limit: query.limit };
   }
 
+  // Para el CMS de admin: sin filtrar por status (ve borradores y archivados también).
+  async findAllForAdmin(query: ListMoviesDto, user: AuthenticatedUser) {
+    if (query.tenantId) {
+      this.tenantAccess.assertHasTenantPermission(user, query.tenantId, 'content.manage');
+    }
+    const where: Prisma.MovieWhereInput = {
+      tenantId: query.tenantId,
+      slug: query.slug,
+      genres: query.genreId ? { some: { genreId: query.genreId } } : undefined,
+      title: query.q ? { contains: query.q, mode: 'insensitive' } : undefined,
+      category: query.category,
+      isKids: query.isKids,
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.movie.findMany({
+        where,
+        skip: query.skip,
+        take: query.limit,
+        orderBy: { createdAt: 'desc' },
+        include: MOVIE_INCLUDE,
+        relationLoadStrategy: 'join',
+      }),
+      this.prisma.movie.count({ where }),
+    ]);
+    return { data, total, page: query.page, limit: query.limit };
+  }
+
+  async findOneForAdmin(id: string, user: AuthenticatedUser) {
+    const movie = await this.findByIdOrThrow(id);
+    this.tenantAccess.assertHasTenantPermission(user, movie.tenantId, 'content.manage');
+    return this.prisma.movie.findUnique({ where: { id }, include: MOVIE_INCLUDE, relationLoadStrategy: 'join' });
+  }
+
   async findOnePublished(id: string) {
     const movie = await this.prisma.movie.findFirst({
       where: { id, status: ContentStatus.PUBLISHED },
       include: MOVIE_INCLUDE,
+      relationLoadStrategy: 'join',
     });
     if (!movie) {
       throw new NotFoundException(`Movie ${id} not found`);
@@ -79,7 +118,7 @@ export class MoviesService {
               await tx.movieGenre.createMany({ data: genreIds.map((genreId) => ({ movieId: id, genreId })) });
             }
           }
-          return tx.movie.update({ where: { id }, data, include: MOVIE_INCLUDE });
+          return tx.movie.update({ where: { id }, data, include: MOVIE_INCLUDE, relationLoadStrategy: 'join' });
         }),
       CONFLICT_MESSAGE,
     );

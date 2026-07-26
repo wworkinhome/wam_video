@@ -8,12 +8,14 @@ export class TenantAccessService {
   // PermissionsGuard ya comprobó que el usuario tiene `permission` en ALGÚN tenant;
   // esta verificación es la que impide que aplique a un tenant que no es el suyo.
   assertHasTenantPermission(user: AuthenticatedUser, tenantId: string, permission: string): void {
-    if (user.globalPermissions.includes(permission)) {
-      return;
+    if (!this.hasTenantPermission(user, tenantId, permission)) {
+      throw new ForbiddenException(`Missing permission "${permission}" for this tenant`);
     }
-    if (user.tenantPermissions[tenantId]?.includes(permission)) {
-      return;
-    }
-    throw new ForbiddenException(`Missing permission "${permission}" for this tenant`);
+  }
+
+  // Misma lógica que assertHasTenantPermission pero sin lanzar — útil para gates que
+  // deben degradar (ej. "el staff no necesita plan") en vez de bloquear con un 403.
+  hasTenantPermission(user: AuthenticatedUser, tenantId: string, permission: string): boolean {
+    return user.globalPermissions.includes(permission) || !!user.tenantPermissions[tenantId]?.includes(permission);
   }
 }
