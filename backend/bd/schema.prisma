@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -225,7 +226,9 @@ model Movie {
   backdropUrl     String?       @map("backdrop_url")
   trailerUrl      String?       @map("trailer_url")
   videoUrl        String?       @map("video_url")
+  category        String?
   isPremium       Boolean       @default(false) @map("is_premium")
+  isKids          Boolean       @default(false) @map("is_kids")
   status          ContentStatus @default(DRAFT)
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
@@ -263,7 +266,9 @@ model Series {
   synopsis    String?
   posterUrl   String?       @map("poster_url")
   backdropUrl String?       @map("backdrop_url")
+  category    String?
   isPremium   Boolean       @default(false) @map("is_premium")
+  isKids      Boolean       @default(false) @map("is_kids")
   status      ContentStatus @default(DRAFT)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -361,6 +366,7 @@ model Channel {
   logoUrl            String?  @map("logo_url")
   streamUrl          String?  @map("stream_url")
   category           String?
+  country            String?
   isPremium          Boolean  @default(false) @map("is_premium")
   dvrEnabled         Boolean  @default(false) @map("dvr_enabled")
   catchupWindowHours Int?     @map("catchup_window_hours")

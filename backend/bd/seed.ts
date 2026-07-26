@@ -254,8 +254,39 @@ async function seedDemoData() {
     },
   });
 
+  // Plan no tiene una clave natural única para upsert; se crean solo si el tenant aún no tiene ninguno.
+  const existingPlans = await prisma.plan.count({ where: { tenantId: tenant.id } });
+  if (existingPlans === 0) {
+    await prisma.plan.createMany({
+      data: [
+        {
+          tenantId: tenant.id,
+          name: 'Gratis',
+          description: 'Acceso básico con catálogo limitado y calidad estándar.',
+          price: 0,
+          currency: 'USD',
+          billingInterval: 'MONTHLY',
+          maxProfiles: 1,
+          maxDevices: 1,
+          videoQuality: 'SD',
+        },
+        {
+          tenantId: tenant.id,
+          name: 'Premium',
+          description: 'Catálogo completo, hasta 4 perfiles, descargas y calidad 4K.',
+          price: 9.99,
+          currency: 'USD',
+          billingInterval: 'MONTHLY',
+          maxProfiles: 4,
+          maxDevices: 4,
+          videoQuality: '4K',
+        },
+      ],
+    });
+  }
+
   console.log(
-    `Demo listo: tenant "${DEMO_TENANT_SLUG}", usuario ROOT "${DEMO_ROOT_EMAIL}" / "${DEMO_ROOT_PASSWORD}", ${movies.length} películas + 1 serie publicadas.`,
+    `Demo listo: tenant "${DEMO_TENANT_SLUG}", usuario ROOT "${DEMO_ROOT_EMAIL}" / "${DEMO_ROOT_PASSWORD}", ${movies.length} películas + 1 serie publicadas, planes Gratis/Premium listos.`,
   );
 }
 
