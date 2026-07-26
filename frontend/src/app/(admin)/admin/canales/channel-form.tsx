@@ -6,8 +6,9 @@ import { toast } from 'sonner';
 import Hls from 'hls.js';
 import { Radio, Tv } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
-import { CHANNEL_CATEGORIES } from '@/lib/channel-categories';
-import type { Tenant } from '@/lib/api/types';
+import { CONTENT_CATEGORIES } from '@/lib/content-categories';
+import { COUNTRIES } from '@/lib/countries';
+import type { Channel, Tenant } from '@/lib/api/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -26,19 +27,27 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, '');
 }
 
-export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]; defaultTenantId: string | null }) {
+type ChannelFormProps =
+  | { mode: 'create'; tenants: Tenant[]; defaultTenantId: string | null; channel?: undefined }
+  | { mode: 'edit'; tenants?: undefined; defaultTenantId?: undefined; channel: Channel };
+
+export function ChannelForm(props: ChannelFormProps) {
+  const isEdit = props.mode === 'edit';
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 
-  const [tenantId, setTenantId] = useState(defaultTenantId ?? tenants[0]?.id ?? '');
-  const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugTouched, setSlugTouched] = useState(false);
-  const [logoUrl, setLogoUrl] = useState('');
-  const [streamUrl, setStreamUrl] = useState('');
-  const [category, setCategory] = useState('');
-  const [isPremium, setIsPremium] = useState(false);
+  const [tenantId, setTenantId] = useState(
+    isEdit ? props.channel.tenantId : (props.defaultTenantId ?? props.tenants[0]?.id ?? ''),
+  );
+  const [name, setName] = useState(isEdit ? props.channel.name : '');
+  const [slug, setSlug] = useState(isEdit ? props.channel.slug : '');
+  const [slugTouched, setSlugTouched] = useState(isEdit);
+  const [logoUrl, setLogoUrl] = useState(isEdit ? (props.channel.logoUrl ?? '') : '');
+  const [streamUrl, setStreamUrl] = useState(isEdit ? (props.channel.streamUrl ?? '') : '');
+  const [category, setCategory] = useState(isEdit ? (props.channel.category ?? '') : '');
+  const [country, setCountry] = useState(isEdit ? (props.channel.country ?? '') : '');
+  const [isPremium, setIsPremium] = useState(isEdit ? props.channel.isPremium : false);
 
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [saving, setSaving] = useState(false);
@@ -79,23 +88,26 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
     event.preventDefault();
     setSaving(true);
     try {
-      await clientFetch('/channels', {
-        method: 'POST',
-        body: JSON.stringify({
-          tenantId,
-          name,
-          slug,
-          logoUrl: logoUrl || undefined,
-          streamUrl: streamUrl || undefined,
-          category: category || undefined,
-          isPremium,
-        }),
-      });
-      toast.success('Canal creado');
+      const body = {
+        name,
+        slug,
+        logoUrl: logoUrl || undefined,
+        streamUrl: streamUrl || undefined,
+        category: category || undefined,
+        country: country || undefined,
+        isPremium,
+      };
+      if (isEdit) {
+        await clientFetch(`/channels/${props.channel.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+        toast.success('Canal actualizado');
+      } else {
+        await clientFetch('/channels', { method: 'POST', body: JSON.stringify({ ...body, tenantId }) });
+        toast.success('Canal creado');
+      }
       router.push('/admin/canales');
       router.refresh();
     } catch {
-      toast.error('No se pudo crear el canal (revisá el slug y los campos requeridos)');
+      toast.error(isEdit ? 'No se pudo actualizar el canal' : 'No se pudo crear el canal (revisá el slug y los campos requeridos)');
     } finally {
       setSaving(false);
     }
@@ -103,7 +115,7 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-5">
-      {tenants.length > 1 && (
+      {!isEdit && props.tenants.length > 1 && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="tenant">Tenant</Label>
           <select
@@ -112,7 +124,7 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
             onChange={(event) => setTenantId(event.target.value)}
             className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
           >
-            {tenants.map((tenant) => (
+            {props.tenants.map((tenant) => (
               <option key={tenant.id} value={tenant.id} className="bg-black">
                 {tenant.name}
               </option>
@@ -149,10 +161,29 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
           placeholder="Deportes, Noticias, Música, Kids…"
         />
         <datalist id="channel-categories">
-          {CHANNEL_CATEGORIES.map((cat) => (
+          {CONTENT_CATEGORIES.map((cat) => (
             <option key={cat} value={cat} />
           ))}
         </datalist>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="country">País</Label>
+        <select
+          id="country"
+          value={country}
+          onChange={(event) => setCountry(event.target.value)}
+          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm"
+        >
+          <option value="" className="bg-black">
+            Sin especificar
+          </option>
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code} className="bg-black">
+              {c.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -216,8 +247,8 @@ export function NewChannelForm({ tenants, defaultTenantId }: { tenants: Tenant[]
         Canal premium
       </label>
 
-      <Button type="submit" disabled={saving || !tenantId} className="bg-red-600 text-white hover:bg-red-700">
-        {saving ? 'Guardando…' : 'Guardar canal'}
+      <Button type="submit" disabled={saving || (!isEdit && !tenantId)} className="bg-red-600 text-white hover:bg-red-700">
+        {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Guardar canal'}
       </Button>
     </form>
   );
