@@ -12,12 +12,12 @@ export function FavoritesList({ profileId }: { profileId: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Favoritos</h1>
+      <h1 className="text-2xl font-bold text-white">Favoritos</h1>
 
       {isLoading ? (
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <Loader2 className="size-6 animate-spin text-white/50" />
       ) : !data || data.data.length === 0 ? (
-        <p className="text-muted-foreground">Todavía no tenés favoritos.</p>
+        <p className="text-white/60">Todavía no tenés favoritos.</p>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {data.data.map((favorite) => (

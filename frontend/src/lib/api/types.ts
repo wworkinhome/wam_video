@@ -51,7 +51,9 @@ export interface Movie {
   backdropUrl: string | null;
   trailerUrl: string | null;
   videoUrl: string | null;
+  category: string | null;
   isPremium: boolean;
+  isKids: boolean;
   status: string;
   genres?: { genre: Genre }[];
 }
@@ -84,7 +86,9 @@ export interface Series {
   synopsis: string | null;
   posterUrl: string | null;
   backdropUrl: string | null;
+  category: string | null;
   isPremium: boolean;
+  isKids: boolean;
   status: string;
   genres?: { genre: Genre }[];
   seasons?: Season[];
@@ -106,10 +110,26 @@ export interface Channel {
   logoUrl: string | null;
   streamUrl: string | null;
   category: string | null;
+  country: string | null;
   isPremium: boolean;
   dvrEnabled: boolean;
   catchupWindowHours: number | null;
   timeshiftEnabled: boolean;
+}
+
+export interface EpgProgram {
+  id: string;
+  channelId: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  startTime: string;
+  endTime: string;
+}
+
+export interface EpgChannelGuide {
+  channel: Channel;
+  programs: EpgProgram[];
 }
 
 export interface MediaTrack {
@@ -160,6 +180,45 @@ export interface WatchHistoryItem {
   updatedAt: string;
   movie?: Movie | null;
   episode?: (Episode & { season?: { series?: Series } }) | null;
+}
+
+export interface Plan {
+  id: string;
+  tenantId: string;
+  name: string;
+  description: string | null;
+  price: string;
+  currency: string;
+  billingInterval: 'MONTHLY' | 'YEARLY';
+  maxProfiles: number;
+  maxDevices: number;
+  videoQuality: string | null;
+  isActive: boolean;
+}
+
+export interface UserPlanSummary {
+  subscriptionId: string;
+  planId: string;
+  name: string;
+  price: string;
+  currency: string;
+  isFree: boolean;
+  status: 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'EXPIRED';
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  status: 'ACTIVE' | 'SUSPENDED' | 'PENDING_VERIFICATION' | 'DELETED';
+  tenantId: string | null;
+  emailVerifiedAt: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  tenant: { id: string; name: string; slug: string } | null;
+  isStaff: boolean;
+  plan: UserPlanSummary | null;
 }
 
 export interface WatchParty {

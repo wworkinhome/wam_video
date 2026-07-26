@@ -5,44 +5,51 @@ import Link from 'next/link';
 import Hls from 'hls.js';
 import { Play, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MovieInfoModal } from '@/components/movie-info-modal';
+import { SeriesInfoModal } from '@/components/series-info-modal';
 import { gradientFor } from '@/lib/gradient';
 import { cn } from '@/lib/utils';
-import type { Movie } from '@/lib/api/types';
+import type { Series } from '@/lib/api/types';
 
 const AUTOPLAY_MS = 13000;
 
-export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activeProfileId?: string | null }) {
+export function SeriesHeroBanner({
+  seriesList,
+  activeProfileId,
+}: {
+  seriesList: Series[];
+  activeProfileId?: string | null;
+}) {
   const [active, setActive] = useState(0);
   const [muted, setMuted] = useState(true);
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
-  const movie = movies[active];
+  const series = seriesList[active];
+  const previewUrl = series?.seasons?.[0]?.episodes?.[0]?.videoUrl ?? null;
 
   useEffect(() => {
-    if (movies.length <= 1) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % movies.length), AUTOPLAY_MS);
+    if (seriesList.length <= 1) return;
+    const id = setInterval(() => setActive((i) => (i + 1) % seriesList.length), AUTOPLAY_MS);
     return () => clearInterval(id);
-  }, [movies.length]);
+  }, [seriesList.length]);
 
   useEffect(() => {
     setVideoReady(false);
     const video = videoRef.current;
     hlsRef.current?.destroy();
     hlsRef.current = null;
-    if (!video || !movie?.trailerUrl) return;
+    if (!video || !previewUrl) return;
 
     const onPlaying = () => setVideoReady(true);
     video.addEventListener('playing', onPlaying);
 
     if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = movie.trailerUrl;
+      video.src = previewUrl;
       video.play().catch(() => {});
     } else if (Hls.isSupported()) {
       const hls = new Hls();
       hlsRef.current = hls;
-      hls.loadSource(movie.trailerUrl);
+      hls.loadSource(previewUrl);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(() => {}));
     }
@@ -52,22 +59,24 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
       hlsRef.current?.destroy();
       hlsRef.current = null;
     };
-  }, [movie?.id, movie?.trailerUrl]);
+  }, [series?.id, previewUrl]);
 
-  if (!movie) return null;
+  if (!series) return null;
+
+  const firstEpisodeId = series.seasons?.[0]?.episodes?.[0]?.id;
 
   return (
     <section
       className={cn(
         'relative -mt-20 flex h-[85vh] min-h-[440px] w-full items-end overflow-hidden',
-        !movie.backdropUrl && `bg-gradient-to-br ${gradientFor(movie.id)}`,
+        !series.backdropUrl && `bg-gradient-to-br ${gradientFor(series.id)}`,
       )}
     >
-      {movie.backdropUrl && (
+      {series.backdropUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          key={movie.id}
-          src={movie.backdropUrl}
+          key={series.id}
+          src={series.backdropUrl}
           alt=""
           className={cn(
             'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
@@ -76,7 +85,7 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
         />
       )}
 
-      {movie.trailerUrl && (
+      {previewUrl && (
         <video
           ref={videoRef}
           muted={muted}
@@ -107,29 +116,31 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
         <div className="mx-auto max-w-7xl">
           <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-red-600/60 bg-red-600/10 px-3 py-1 text-xs font-semibold tracking-wide text-red-500 uppercase">
             <span className="size-1.5 rounded-full bg-red-500" />
-            Destacado
+            Serie destacada
           </span>
-          <h1 className="max-w-xl text-4xl font-bold text-white drop-shadow-lg sm:text-6xl">{movie.title}</h1>
-          {movie.synopsis && (
+          <h1 className="max-w-xl text-4xl font-bold text-white drop-shadow-lg sm:text-6xl">{series.title}</h1>
+          {series.synopsis && (
             <p className="mt-4 line-clamp-3 max-w-md text-sm text-white/85 drop-shadow sm:text-base">
-              {movie.synopsis}
+              {series.synopsis}
             </p>
           )}
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link href={`/ver/pelicula/${movie.id}`}>
-              <Button size="lg" className="gap-2">
-                <Play className="size-5 fill-current" />
-                Reproducir
-              </Button>
-            </Link>
-            <MovieInfoModal movie={movie} activeProfileId={activeProfileId} />
+            {firstEpisodeId && (
+              <Link href={`/ver/episodio/${firstEpisodeId}`}>
+                <Button size="lg" className="gap-2">
+                  <Play className="size-5 fill-current" />
+                  Reproducir
+                </Button>
+              </Link>
+            )}
+            <SeriesInfoModal series={series} activeProfileId={activeProfileId} />
           </div>
 
-          {movies.length > 1 && (
+          {seriesList.length > 1 && (
             <div className="mt-8 flex gap-2">
-              {movies.map((m, i) => (
+              {seriesList.map((s, i) => (
                 <button
-                  key={m.id}
+                  key={s.id}
                   aria-label={`Ir a destacado ${i + 1}`}
                   onClick={() => setActive(i)}
                   className={cn(

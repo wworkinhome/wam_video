@@ -1,28 +1,56 @@
+'use client';
+
 import Link from 'next/link';
-import { Tv } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { gradientFor } from '@/lib/gradient';
+import { useHoverPreview } from '@/hooks/use-hover-preview';
 import { cn } from '@/lib/utils';
 import type { Channel } from '@/lib/api/types';
 
 export function ChannelCard({ channel }: { channel: Channel }) {
+  const { videoRef, previewing, start, stop } = useHoverPreview(channel.streamUrl);
+
   return (
-    <Link href={`/canales/${channel.slug}`} className="group block w-full">
+    <Link href={`/canales/${channel.slug}`} className="group block w-full" onMouseEnter={start} onMouseLeave={stop}>
       <div
         className={cn(
-          'relative aspect-video w-full overflow-hidden rounded-md ring-1 ring-white/10 transition-transform duration-200 group-hover:scale-105 group-hover:shadow-2xl',
-          !channel.logoUrl && `bg-gradient-to-br ${gradientFor(channel.id)}`,
+          'relative aspect-video w-full overflow-hidden rounded-lg bg-black ring-1 ring-white/10 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-red-600/60',
+          !channel.logoUrl && !previewing && `bg-gradient-to-br ${gradientFor(channel.id)}`,
         )}
       >
         {channel.logoUrl ? (
-          <div className="flex h-full w-full items-center justify-center bg-black p-6">
+          <div
+            className={cn(
+              'flex h-full w-full items-center justify-center bg-black p-6 transition-opacity duration-300',
+              previewing && 'opacity-0',
+            )}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={channel.logoUrl} alt={channel.name} className="max-h-full max-w-full object-contain" />
           </div>
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Tv className="size-8 text-white/50" />
+          <div
+            className={cn(
+              'flex h-full w-full items-center justify-center p-4 transition-opacity duration-300',
+              previewing && 'opacity-0',
+            )}
+          >
+            <span className="line-clamp-2 text-center text-lg font-black tracking-tight text-white italic drop-shadow-md sm:text-xl">
+              {channel.name}
+            </span>
           </div>
+        )}
+
+        {channel.streamUrl && (
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            className={cn(
+              'absolute inset-0 h-full w-full object-cover transition-opacity duration-300',
+              previewing ? 'opacity-100' : 'pointer-events-none opacity-0',
+            )}
+          />
         )}
 
         <Badge className="absolute left-1.5 top-1.5 gap-1 bg-red-600 text-[10px] text-white hover:bg-red-600">
