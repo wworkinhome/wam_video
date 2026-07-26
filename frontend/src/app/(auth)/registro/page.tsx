@@ -2,11 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { toast } from 'sonner';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { UserPlus, Mail, Lock, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 export default function RegisterPage() {
@@ -38,29 +36,51 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Crear cuenta</CardTitle>
-        <CardDescription>Registrate para empezar a ver contenido.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Nombre</Label>
-            <Input id="name" required value={name} onChange={(event) => setName(event.target.value)} />
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/60">
+      <h1 className="text-center text-lg font-black tracking-tight text-white uppercase">Creá tu cuenta</h1>
+      <p className="mt-1 text-center text-xs text-white/50 uppercase tracking-wide">Sumate a la plataforma</p>
+
+      <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="name" className="text-[11px] font-bold tracking-wide text-white/60 uppercase">
+            Nombre
+          </label>
+          <div className="relative">
+            <User className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+            <Input
+              id="name"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="h-11 pl-9"
+            />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-[11px] font-bold tracking-wide text-white/60 uppercase">
+            Correo electrónico
+          </label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
             <Input
               id="email"
               type="email"
               required
+              placeholder="tu@correo.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              className="h-11 pl-9"
             />
           </div>
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Contraseña</Label>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-[11px] font-bold tracking-wide text-white/60 uppercase">
+            Contraseña
+          </label>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
             <Input
               id="password"
               type="password"
@@ -68,19 +88,16 @@ export default function RegisterPage() {
               minLength={8}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              className="h-11 pl-9"
             />
           </div>
-          <Button type="submit" disabled={loading} className="mt-2">
-            {loading ? 'Creando cuenta…' : 'Crear cuenta'}
-          </Button>
-        </form>
-        <p className="mt-4 text-center text-sm text-muted-foreground">
-          ¿Ya tenés cuenta?{' '}
-          <Link href="/login" className="text-foreground underline underline-offset-4">
-            Iniciar sesión
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        </div>
+
+        <Button type="submit" disabled={loading} size="lg" className="mt-2 gap-2">
+          <UserPlus className="size-4" />
+          {loading ? 'Creando cuenta…' : 'Crear cuenta'}
+        </Button>
+      </form>
+    </div>
   );
 }

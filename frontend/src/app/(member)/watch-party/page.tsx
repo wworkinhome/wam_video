@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { Users } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
 import type { WatchParty } from '@/lib/api/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -58,15 +59,20 @@ export default function WatchPartyPage() {
 
   return (
     <div className="mx-auto flex max-w-xl flex-col gap-6">
-      <h1 className="text-2xl font-bold">Watch Party</h1>
-      <p className="text-sm text-muted-foreground">
+      <div className="flex items-center gap-3">
+        <div className="flex size-10 items-center justify-center rounded-full bg-red-600/15 text-red-500">
+          <Users className="size-5" />
+        </div>
+        <h1 className="text-2xl font-bold text-white">Watch Party</h1>
+      </div>
+      <p className="text-sm text-white/60">
         Mirá contenido junto a otros usando un código para unirse. La reproducción todavía no se
         sincroniza en vivo entre participantes.
       </p>
 
-      <Card>
+      <Card className="border-none bg-white/[0.04] ring-1 ring-white/10">
         <CardHeader>
-          <CardTitle>Crear</CardTitle>
+          <CardTitle className="text-base font-semibold text-white">Crear</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleCreate} className="flex flex-col gap-3">
@@ -84,16 +90,19 @@ export default function WatchPartyPage() {
             </Button>
           </form>
           {created && (
-            <p className="mt-3 text-sm">
-              Código para compartir: <span className="font-mono font-semibold">{created.code}</span>
+            <p className="mt-3 text-sm text-white/70">
+              Código para compartir:{' '}
+              <span className="rounded bg-red-600/15 px-1.5 py-0.5 font-mono font-semibold text-red-400">
+                {created.code}
+              </span>
             </p>
           )}
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="border-none bg-white/[0.04] ring-1 ring-white/10">
         <CardHeader>
-          <CardTitle>Unirse con código</CardTitle>
+          <CardTitle className="text-base font-semibold text-white">Unirse con código</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleJoin} className="flex flex-col gap-3">
