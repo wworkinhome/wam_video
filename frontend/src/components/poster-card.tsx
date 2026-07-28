@@ -21,7 +21,7 @@ export function PosterCard({
     <Link href={href} className="group block w-full">
       <div
         className={cn(
-          'relative aspect-[2/3] w-full overflow-hidden rounded-lg ring-1 ring-white/10 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-red-600/60',
+          'card-hover relative aspect-[2/3] w-full overflow-hidden rounded-xl ring-1 ring-white/10 group-hover:ring-red-500/60',
           !posterUrl && `bg-gradient-to-br ${gradientFor(id)}`,
         )}
       >
@@ -35,7 +35,7 @@ export function PosterCard({
         )}
 
         {isPremium && (
-          <Badge className="absolute top-1.5 right-1.5 text-[10px]" variant="default">
+          <Badge className="absolute top-1.5 right-1.5 bg-accent-glow text-[10px] text-accent-glow-foreground" variant="default">
             Premium
           </Badge>
         )}

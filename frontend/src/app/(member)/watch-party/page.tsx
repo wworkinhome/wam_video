@@ -45,11 +45,7 @@ export default function WatchPartyPage() {
       const party = await clientFetch<WatchParty>(`/watch-parties/code/${joinCode.trim().toUpperCase()}`);
       await clientFetch(`/watch-parties/${party.id}/join`, { method: 'POST' });
       toast.success('Te uniste al watch party');
-      if (party.movieId) {
-        router.push(`/ver/pelicula/${party.movieId}`);
-      } else if (party.episodeId) {
-        router.push(`/ver/episodio/${party.episodeId}`);
-      }
+      router.push(`/watch-party/${party.id}`);
     } catch {
       toast.error('Código inválido');
     } finally {
@@ -66,8 +62,9 @@ export default function WatchPartyPage() {
         <h1 className="text-2xl font-bold text-white">Watch Party</h1>
       </div>
       <p className="text-sm text-white/60">
-        Mirá contenido junto a otros usando un código para unirse. La reproducción todavía no se
-        sincroniza en vivo entre participantes.
+        Mirá contenido junto a otros usando un código para unirse, con chat en vivo. La
+        reproducción todavía no se sincroniza automáticamente entre participantes — cada quien
+        controla la suya.
       </p>
 
       <Card className="border-none bg-white/[0.04] ring-1 ring-white/10">
@@ -90,12 +87,21 @@ export default function WatchPartyPage() {
             </Button>
           </form>
           {created && (
-            <p className="mt-3 text-sm text-white/70">
-              Código para compartir:{' '}
-              <span className="rounded bg-red-600/15 px-1.5 py-0.5 font-mono font-semibold text-red-400">
-                {created.code}
-              </span>
-            </p>
+            <div className="mt-3 flex flex-col gap-2">
+              <p className="text-sm text-white/70">
+                Código para compartir:{' '}
+                <span className="rounded bg-red-600/15 px-1.5 py-0.5 font-mono font-semibold text-red-400">
+                  {created.code}
+                </span>
+              </p>
+              <Button
+                type="button"
+                onClick={() => router.push(`/watch-party/${created.id}`)}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                Entrar a la sala
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

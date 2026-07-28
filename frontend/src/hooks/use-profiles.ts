@@ -11,10 +11,11 @@ export interface ProfileInput {
   pinCode?: string;
 }
 
-export function useProfiles() {
+export function useProfiles(enabled = true) {
   return useQuery({
     queryKey: ['profiles'],
     queryFn: () => clientFetch<Profile[]>('/profiles'),
+    enabled,
   });
 }
 

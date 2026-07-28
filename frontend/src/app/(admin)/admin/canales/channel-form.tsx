@@ -48,6 +48,13 @@ export function ChannelForm(props: ChannelFormProps) {
   const [category, setCategory] = useState(isEdit ? (props.channel.category ?? '') : '');
   const [country, setCountry] = useState(isEdit ? (props.channel.country ?? '') : '');
   const [isPremium, setIsPremium] = useState(isEdit ? props.channel.isPremium : false);
+  const [dvrEnabled, setDvrEnabled] = useState(isEdit ? props.channel.dvrEnabled : false);
+  const [catchupWindowHours, setCatchupWindowHours] = useState(
+    isEdit ? (props.channel.catchupWindowHours?.toString() ?? '') : '',
+  );
+  const [catchupUrlTemplate, setCatchupUrlTemplate] = useState(
+    isEdit ? (props.channel.catchupUrlTemplate ?? '') : '',
+  );
 
   const [testStatus, setTestStatus] = useState<TestStatus>('idle');
   const [saving, setSaving] = useState(false);
@@ -96,6 +103,9 @@ export function ChannelForm(props: ChannelFormProps) {
         category: category || undefined,
         country: country || undefined,
         isPremium,
+        dvrEnabled,
+        catchupWindowHours: catchupWindowHours ? Number(catchupWindowHours) : undefined,
+        catchupUrlTemplate: catchupUrlTemplate || undefined,
       };
       if (isEdit) {
         await clientFetch(`/channels/${props.channel.id}`, { method: 'PATCH', body: JSON.stringify(body) });
@@ -246,6 +256,42 @@ export function ChannelForm(props: ChannelFormProps) {
         <input type="checkbox" checked={isPremium} onChange={(event) => setIsPremium(event.target.checked)} />
         Canal premium
       </label>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-4">
+        <label className="flex items-center gap-2 text-sm font-semibold text-white">
+          <input type="checkbox" checked={dvrEnabled} onChange={(event) => setDvrEnabled(event.target.checked)} />
+          DVR / rebobinar TV en vivo
+        </label>
+        {dvrEnabled && (
+          <>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="catchupWindowHours">Ventana de rebobinado (horas)</Label>
+              <Input
+                id="catchupWindowHours"
+                type="number"
+                min={1}
+                value={catchupWindowHours}
+                onChange={(event) => setCatchupWindowHours(event.target.value)}
+                placeholder="4"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="catchupUrlTemplate">Plantilla de URL de catch-up del proveedor</Label>
+              <Input
+                id="catchupUrlTemplate"
+                value={catchupUrlTemplate}
+                onChange={(event) => setCatchupUrlTemplate(event.target.value)}
+                placeholder="https://.../live.m3u8?utc={start}&lutc={now}"
+              />
+              <p className="text-xs text-white/40">
+                Placeholders disponibles: <code>{'{start}'}</code> y <code>{'{now}'}</code> (unix
+                seconds). Cada proveedor IPTV usa su propia convención — sin esto, el canal no
+                puede rebobinar aunque tenga DVR activado.
+              </p>
+            </div>
+          </>
+        )}
+      </div>
 
       <Button type="submit" disabled={saving || (!isEdit && !tenantId)} className="bg-red-600 text-white hover:bg-red-700">
         {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Guardar canal'}

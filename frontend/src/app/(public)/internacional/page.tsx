@@ -18,7 +18,7 @@ export default function InternacionalPage() {
           <Link
             key={country.code}
             href={`/canales?country=${country.code}`}
-            className="group flex flex-col items-center gap-2 rounded-xl bg-white/5 px-3 py-6 text-center ring-1 ring-white/10 transition-all hover:bg-white/10 hover:ring-red-600/60"
+            className="group flex flex-col items-center gap-2 rounded-xl bg-white/5 px-3 py-6 text-center ring-1 ring-white/10 transition-all hover:bg-white/10 hover:ring-primary/60"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

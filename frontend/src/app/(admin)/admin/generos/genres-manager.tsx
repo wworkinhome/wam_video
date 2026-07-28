@@ -9,6 +9,7 @@ import type { Genre } from '@/lib/api/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/confirm-dialog';
 
 const DIACRITICS_REGEX = new RegExp('[̀-ͯ]', 'g');
 
@@ -25,6 +26,7 @@ export function GenresManager({ tenantId, genres }: { tenantId: string; genres: 
   const router = useRouter();
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
@@ -45,7 +47,8 @@ export function GenresManager({ tenantId, genres }: { tenantId: string; genres: 
   }
 
   async function handleDelete(id: string, label: string) {
-    if (!confirm(`¿Eliminar el género "${label}"?`)) return;
+    const ok = await confirm({ title: `¿Eliminar "${label}"?`, confirmLabel: 'Eliminar', destructive: true });
+    if (!ok) return;
     try {
       await clientFetch(`/genres/${id}`, { method: 'DELETE' });
       toast.success('Género eliminado');
@@ -97,6 +100,7 @@ export function GenresManager({ tenantId, genres }: { tenantId: string; genres: 
           Agregar
         </Button>
       </form>
+      {ConfirmDialog}
     </div>
   );
 }

@@ -23,6 +23,13 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
     cache: 'no-store',
   });
 
+  // Los status "sin cuerpo" (204/205/304) rompen el constructor de Response si se les
+  // pasa un body, aunque sea un string vacío — hay que pasar null explícitamente.
+  const NO_BODY_STATUSES = new Set([204, 205, 304]);
+  if (NO_BODY_STATUSES.has(res.status)) {
+    return new NextResponse(null, { status: res.status });
+  }
+
   const responseBody = await res.text();
   return new NextResponse(responseBody, {
     status: res.status,

@@ -15,14 +15,14 @@ export function MovieCard({ movie }: { movie: Movie }) {
     <Link href={`/peliculas/${movie.slug}`} className="group block w-full" onMouseEnter={start} onMouseLeave={stop}>
       <div
         className={cn(
-          'relative aspect-video w-full overflow-hidden rounded-lg bg-black ring-1 ring-white/10 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-red-600/60',
-          !movie.backdropUrl && !previewing && `bg-gradient-to-br ${gradientFor(movie.id)}`,
+          'card-hover relative aspect-[2/3] w-full overflow-hidden rounded-xl bg-[#0e0b0b] ring-1 ring-white/10 group-hover:ring-red-500/60',
+          !movie.posterUrl && !previewing && `bg-gradient-to-br ${gradientFor(movie.id)}`,
         )}
       >
-        {movie.backdropUrl ? (
+        {movie.posterUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={movie.backdropUrl}
+            src={movie.posterUrl}
             alt={movie.title}
             className={cn('h-full w-full object-cover transition-opacity duration-300', previewing && 'opacity-0')}
           />
@@ -50,7 +50,7 @@ export function MovieCard({ movie }: { movie: Movie }) {
         )}
 
         {movie.isPremium && (
-          <Badge className="absolute right-1.5 top-1.5 text-[10px]" variant="default">
+          <Badge className="absolute right-1.5 top-1.5 bg-accent-glow text-[10px] text-accent-glow-foreground" variant="default">
             Premium
           </Badge>
         )}

@@ -107,6 +107,79 @@ export class SeriesService {
     });
   }
 
+  // "Top 10" estilo Netflix: rankea por actividad real de WatchHistory (no hay
+  // datos de popularidad por país, así que es "más vistas en la plataforma", no
+  // una simulación de un feed regional). WatchHistory solo referencia episodeId,
+  // así que se agrupa por episodio y se suma por serie en memoria. Si todavía no
+  // hay historial (instalación nueva) o faltan series para completar el límite,
+  // se rellena con lo más reciente — mismo fallback que usa RecommendationsService.
+  async findPopular(tenantId: string | undefined, isKids: boolean | undefined, limit: number) {
+    const grouped = await this.prisma.watchHistory.groupBy({
+      by: ['episodeId'],
+      where: { episodeId: { not: null } },
+      _count: { episodeId: true },
+    });
+
+    const countBySeriesId = new Map<string, number>();
+    if (grouped.length > 0) {
+      const episodeIds = grouped.map((g) => g.episodeId as string);
+      const episodeCount = new Map(grouped.map((g) => [g.episodeId as string, g._count.episodeId]));
+      const episodes = await this.prisma.episode.findMany({
+        where: { id: { in: episodeIds } },
+        select: {
+          id: true,
+          season: { select: { seriesId: true, series: { select: { tenantId: true, status: true, isKids: true } } } },
+        },
+      });
+
+      for (const episode of episodes) {
+        const series = episode.season?.series;
+        const seriesId = episode.season?.seriesId;
+        if (!series || !seriesId || series.status !== ContentStatus.PUBLISHED) continue;
+        if (tenantId && series.tenantId !== tenantId) continue;
+        if (isKids !== undefined && series.isKids !== isKids) continue;
+        countBySeriesId.set(seriesId, (countBySeriesId.get(seriesId) ?? 0) + (episodeCount.get(episode.id) ?? 0));
+      }
+    }
+
+    const rankedIds = [...countBySeriesId.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, limit)
+      .map(([id]) => id);
+
+    const ranked: Prisma.SeriesGetPayload<{ include: typeof SERIES_LIST_INCLUDE }>[] = [];
+    if (rankedIds.length > 0) {
+      const series = await this.prisma.series.findMany({
+        where: { id: { in: rankedIds } },
+        include: SERIES_LIST_INCLUDE,
+        relationLoadStrategy: 'join',
+      });
+      const byId = new Map(series.map((s) => [s.id, s]));
+      for (const id of rankedIds) {
+        const match = byId.get(id);
+        if (match) ranked.push(match);
+      }
+    }
+
+    if (ranked.length < limit) {
+      const filler = await this.prisma.series.findMany({
+        where: {
+          tenantId,
+          status: ContentStatus.PUBLISHED,
+          isKids,
+          id: { notIn: ranked.map((s) => s.id) },
+        },
+        take: limit - ranked.length,
+        orderBy: { createdAt: 'desc' },
+        include: SERIES_LIST_INCLUDE,
+        relationLoadStrategy: 'join',
+      });
+      ranked.push(...filler);
+    }
+
+    return ranked;
+  }
+
   async findOnePublished(id: string) {
     const series = await this.prisma.series.findFirst({
       where: { id, status: ContentStatus.PUBLISHED },

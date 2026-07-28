@@ -40,6 +40,29 @@ export class WatchPartyService {
     return this.findOrThrow(id);
   }
 
+  async isMember(partyId: string, userId: string): Promise<boolean> {
+    const party = await this.prisma.watchParty.findUnique({
+      where: { id: partyId },
+      include: { participants: { where: { userId } } },
+    });
+    if (!party) return false;
+    return party.hostUserId === userId || party.participants.length > 0;
+  }
+
+  async listMessages(userId: string, id: string) {
+    const party = await this.findOrThrow(id);
+    const isMember = party.hostUserId === userId || party.participants.some((p) => p.userId === userId);
+    if (!isMember) {
+      throw new ForbiddenException('You are not a participant of this watch party');
+    }
+    return this.prisma.watchPartyMessage.findMany({
+      where: { watchPartyId: id },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+      include: { user: { select: { id: true, name: true } } },
+    });
+  }
+
   findByCode(code: string) {
     return this.findOrThrowByCode(code);
   }

@@ -49,7 +49,7 @@ export default async function BuscarPage({
           {movies.data.length > 0 && (
             <MediaRow title="Películas">
               {movies.data.map((movie) => (
-                <div key={movie.id} className="w-48 shrink-0 sm:w-56 md:w-64">
+                <div key={movie.id} className="w-32 shrink-0 sm:w-40 md:w-48">
                   <MovieCard movie={movie} />
                 </div>
               ))}
@@ -59,7 +59,7 @@ export default async function BuscarPage({
           {series.data.length > 0 && (
             <MediaRow title="Series">
               {series.data.map((item) => (
-                <div key={item.id} className="w-48 shrink-0 sm:w-56 md:w-64">
+                <div key={item.id} className="w-32 shrink-0 sm:w-40 md:w-48">
                   <SeriesCard series={item} />
                 </div>
               ))}

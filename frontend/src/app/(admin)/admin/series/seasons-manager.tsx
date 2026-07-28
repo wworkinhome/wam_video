@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { VideoTestFieldCompact } from '@/components/admin/video-test-field';
+import { useConfirmDialog } from '@/components/confirm-dialog';
 import { cn } from '@/lib/utils';
 
 export function SeasonsManager({ seriesId, seasons }: { seriesId: string; seasons: Season[] }) {
@@ -19,6 +20,7 @@ export function SeasonsManager({ seriesId, seasons }: { seriesId: string; season
   const [newSeasonNumber, setNewSeasonNumber] = useState(String(seasons.length + 1));
   const [newSeasonTitle, setNewSeasonTitle] = useState('');
   const [creatingSeason, setCreatingSeason] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   async function handleCreateSeason(event: React.FormEvent) {
     event.preventDefault();
@@ -40,7 +42,13 @@ export function SeasonsManager({ seriesId, seasons }: { seriesId: string; season
   }
 
   async function handleDeleteSeason(seasonId: string, label: string) {
-    if (!confirm(`¿Eliminar "${label}" y todos sus episodios?`)) return;
+    const ok = await confirm({
+      title: `¿Eliminar "${label}"?`,
+      description: 'Se borran todos sus episodios.',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await clientFetch(`/series/${seriesId}/seasons/${seasonId}`, { method: 'DELETE' });
       toast.success('Temporada eliminada');
@@ -148,6 +156,7 @@ export function SeasonsManager({ seriesId, seasons }: { seriesId: string; season
           Agregar temporada
         </Button>
       </form>
+      {ConfirmDialog}
     </div>
   );
 }
@@ -231,9 +240,11 @@ function EpisodesList({
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   async function handleDeleteEpisode(episodeId: string, label: string) {
-    if (!confirm(`¿Eliminar el episodio "${label}"?`)) return;
+    const ok = await confirm({ title: `¿Eliminar el episodio "${label}"?`, confirmLabel: 'Eliminar', destructive: true });
+    if (!ok) return;
     try {
       await clientFetch(`/series/${seriesId}/seasons/${seasonId}/episodes/${episodeId}`, { method: 'DELETE' });
       toast.success('Episodio eliminado');
@@ -320,6 +331,7 @@ function EpisodesList({
           Agregar episodio
         </Button>
       )}
+      {ConfirmDialog}
     </div>
   );
 }

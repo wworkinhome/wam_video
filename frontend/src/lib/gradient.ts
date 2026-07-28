@@ -1,12 +1,12 @@
 // Paleta determinística para las cards sin poster real: mismo id → mismo gradiente,
 // así el catálogo demo no se ve como "roto" mientras no haya artwork cargado.
 const GRADIENTS = [
-  'from-violet-600 to-fuchsia-500',
-  'from-blue-600 to-cyan-400',
-  'from-rose-600 to-orange-400',
-  'from-emerald-600 to-teal-400',
-  'from-amber-600 to-yellow-400',
-  'from-indigo-600 to-purple-400',
+  'from-red-600 to-orange-400',
+  'from-red-700 to-red-500',
+  'from-amber-600 to-red-400',
+  'from-orange-600 to-red-500',
+  'from-yellow-600 to-orange-400',
+  'from-red-500 to-pink-500',
 ];
 
 export function gradientFor(id: string): string {

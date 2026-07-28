@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AvatarPicker } from '@/components/avatar-picker';
 import { PinInput } from '@/components/pin-input';
+import { useConfirmDialog } from '@/components/confirm-dialog';
 import { defaultAvatarUrl } from '@/lib/profile-avatars';
 import { gradientFor } from '@/lib/gradient';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export default function ProfilesPage() {
   const deleteProfile = useDeleteProfile();
   const [managing, setManaging] = useState(false);
   const [view, setView] = useState<ViewState>({ kind: 'grid' });
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   async function handleSelect(profile: Profile) {
     if (profile.hasPin) {
@@ -46,7 +48,13 @@ export default function ProfilesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('¿Eliminar este perfil? Esta acción no se puede deshacer.')) return;
+    const ok = await confirm({
+      title: '¿Eliminar este perfil?',
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deleteProfile.mutateAsync(id);
       setView({ kind: 'grid' });
@@ -61,11 +69,14 @@ export default function ProfilesPage() {
 
   if (view.kind === 'edit') {
     return (
-      <ProfileForm
-        profile={view.profile}
-        onDone={() => setView({ kind: 'grid' })}
-        onDelete={() => handleDelete(view.profile.id)}
-      />
+      <>
+        <ProfileForm
+          profile={view.profile}
+          onDone={() => setView({ kind: 'grid' })}
+          onDelete={() => handleDelete(view.profile.id)}
+        />
+        {ConfirmDialog}
+      </>
     );
   }
 
@@ -91,7 +102,7 @@ export default function ProfilesPage() {
               <div className="relative w-full">
                 <div
                   className={cn(
-                    'aspect-square w-full overflow-hidden rounded-xl ring-2 ring-transparent transition-all group-hover:ring-red-600',
+                    'aspect-square w-full overflow-hidden rounded-xl ring-2 ring-transparent transition-all group-hover:ring-primary',
                     !profile.avatarUrl && `bg-gradient-to-br ${gradientFor(profile.id)}`,
                   )}
                 >

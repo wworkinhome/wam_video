@@ -30,6 +30,11 @@ export class SeriesController {
     return this.seriesService.findAllPublished(query);
   }
 
+  @Get('popular')
+  findPopular(@Query() query: ListSeriesDto) {
+    return this.seriesService.findPopular(query.tenantId, query.isKids, query.limit);
+  }
+
   @Get('admin')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('content.manage')

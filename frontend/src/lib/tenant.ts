@@ -6,7 +6,7 @@ import type { ResolvedTenant } from './api/types';
 // Proxy corre en runtime de Node.js (no Edge aislado), así que este cache en memoria
 // del proceso persiste entre requests: evita pegarle al backend en cada click/carga.
 // Antes esto no tenía cache y agregaba ~1-2s a TODO, incluidas las acciones de botones.
-const TTL_MS = 60_000;
+const TTL_MS = 30 * 60_000;
 const cache = new Map<string, { tenant: ResolvedTenant | null; expiresAt: number }>();
 
 export async function resolveTenantByHost(host: string): Promise<ResolvedTenant | null> {

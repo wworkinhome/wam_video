@@ -28,6 +28,12 @@ export function ContinueWatchingRow({ profileId, kind }: { profileId: string; ki
   );
 }
 
+// Tarjeta individual reutilizada por la fila horizontal de acá y por la grilla de
+// /continuar-viendo (que mezcla películas y episodios, por eso decide sola cuál renderizar).
+export function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
+  return item.episode ? <EpisodeCard item={item} /> : <MovieContinueCard item={item} />;
+}
+
 function progressPercent(item: WatchHistoryItem): number {
   return item.durationSeconds ? Math.min(100, Math.round((item.progressSeconds / item.durationSeconds) * 100)) : 0;
 }
@@ -41,7 +47,7 @@ function EpisodeCard({ item }: { item: WatchHistoryItem }) {
     <Link href={`/ver/episodio/${episode.id}`} className="group block w-full">
       <div
         className={cn(
-          'relative aspect-video w-full overflow-hidden rounded-lg ring-1 ring-white/10 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-red-600/60',
+          'card-hover relative aspect-video w-full overflow-hidden rounded-xl ring-1 ring-white/10 group-hover:ring-red-500/60',
           !episode.thumbnailUrl && `bg-gradient-to-br ${gradientFor(episode.id)}`,
         )}
       >
@@ -60,7 +66,7 @@ function EpisodeCard({ item }: { item: WatchHistoryItem }) {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20">
-          <div className="h-full bg-red-600" style={{ width: `${progressPercent(item)}%` }} />
+          <div className="h-full bg-red-500" style={{ width: `${progressPercent(item)}%` }} />
         </div>
       </div>
     </Link>
@@ -74,7 +80,7 @@ function MovieContinueCard({ item }: { item: WatchHistoryItem }) {
     <Link href={`/ver/pelicula/${movie.id}`} className="group block w-full">
       <div
         className={cn(
-          'relative aspect-video w-full overflow-hidden rounded-lg ring-1 ring-white/10 transition-all duration-200 group-hover:scale-105 group-hover:shadow-2xl group-hover:ring-red-600/60',
+          'card-hover relative aspect-video w-full overflow-hidden rounded-xl ring-1 ring-white/10 group-hover:ring-red-500/60',
           !movie.backdropUrl && `bg-gradient-to-br ${gradientFor(movie.id)}`,
         )}
       >
@@ -92,7 +98,7 @@ function MovieContinueCard({ item }: { item: WatchHistoryItem }) {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20">
-          <div className="h-full bg-red-600" style={{ width: `${progressPercent(item)}%` }} />
+          <div className="h-full bg-red-500" style={{ width: `${progressPercent(item)}%` }} />
         </div>
       </div>
     </Link>

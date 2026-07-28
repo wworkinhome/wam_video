@@ -7,6 +7,7 @@ import { Play, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SeriesInfoModal } from '@/components/series-info-modal';
 import { gradientFor } from '@/lib/gradient';
+import { FAST_START_HLS_CONFIG } from '@/lib/hls-config';
 import { cn } from '@/lib/utils';
 import type { Series } from '@/lib/api/types';
 
@@ -47,7 +48,7 @@ export function SeriesHeroBanner({
       video.src = previewUrl;
       video.play().catch(() => {});
     } else if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls(FAST_START_HLS_CONFIG);
       hlsRef.current = hls;
       hls.loadSource(previewUrl);
       hls.attachMedia(video);
@@ -80,7 +81,7 @@ export function SeriesHeroBanner({
           alt=""
           className={cn(
             'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-            videoReady ? 'opacity-0' : 'animate-in fade-in opacity-100',
+            videoReady ? 'opacity-0' : 'animate-in fade-in animate-ken-burns opacity-100',
           )}
         />
       )}
@@ -93,13 +94,13 @@ export function SeriesHeroBanner({
           playsInline
           className={cn(
             'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-            videoReady ? 'opacity-100' : 'opacity-0',
+            videoReady ? 'animate-ken-burns opacity-100' : 'opacity-0',
           )}
         />
       )}
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-red-950/20" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/30 to-transparent" />
 
       {videoReady && (
         <button
@@ -114,8 +115,8 @@ export function SeriesHeroBanner({
 
       <div className="relative w-full px-4 pb-16 sm:px-8">
         <div className="mx-auto max-w-7xl">
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-red-600/60 bg-red-600/10 px-3 py-1 text-xs font-semibold tracking-wide text-red-500 uppercase">
-            <span className="size-1.5 rounded-full bg-red-500" />
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+            <span className="size-1.5 rounded-full bg-white" />
             Serie destacada
           </span>
           <h1 className="max-w-xl text-4xl font-bold text-white drop-shadow-lg sm:text-6xl">{series.title}</h1>
@@ -145,7 +146,7 @@ export function SeriesHeroBanner({
                   onClick={() => setActive(i)}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
-                    i === active ? 'w-6 bg-red-600' : 'w-1.5 bg-white/30 hover:bg-white/50',
+                    i === active ? 'w-6 bg-primary' : 'w-1.5 bg-white/30 hover:bg-white/50',
                   )}
                 />
               ))}

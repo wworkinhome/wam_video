@@ -92,6 +92,7 @@ model User {
   notifications            Notification[]
   hostedWatchParties       WatchParty[]            @relation("WatchPartyHost")
   watchPartyParticipations WatchPartyParticipant[] @relation("WatchPartyParticipant")
+  watchPartyMessages       WatchPartyMessage[]     @relation("WatchPartyMessageSender")
 
   @@index([tenantId])
   @@map("users")
@@ -371,6 +372,16 @@ model Channel {
   dvrEnabled         Boolean  @default(false) @map("dvr_enabled")
   catchupWindowHours Int?     @map("catchup_window_hours")
   timeshiftEnabled   Boolean  @default(false) @map("timeshift_enabled")
+  // Plantilla de URL para pedirle al proveedor un stream desplazado en el tiempo (catch-up).
+  // Soporta los placeholders {start} y {end} (unix seconds) y {now}, ej:
+  // "https://provider/live/CHANNEL.m3u8?utc={start}&lutc={now}" — cada proveedor IPTV usa
+  // su propia convención (o ninguna); sin esto seteado el canal no ofrece rebobinar.
+  catchupUrlTemplate String?  @map("catchup_url_template")
+  // Resultado del último chequeo de salud del stream (scripts/check-channel-streams.js) —
+  // "ok" | "broken" | null (todavía no se probó). No se verifica en cada request, solo
+  // cuando se corre el script a mano, así que puede quedar desactualizado.
+  streamStatus       String?   @map("stream_status")
+  streamCheckedAt    DateTime? @map("stream_checked_at")
   createdAt          DateTime @default(now()) @map("created_at")
 
   tenant          Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -378,6 +389,8 @@ model Channel {
   packageChannels ChannelPackageChannel[]
 
   @@unique([tenantId, slug])
+  @@index([tenantId, country])
+  @@index([tenantId, category])
   @@map("channels")
 }
 
@@ -455,6 +468,7 @@ model Plan {
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   packages      PlanPackage[]
   subscriptions Subscription[]
+  payments      Payment[]
 
   @@map("plans")
 }
@@ -532,6 +546,10 @@ model Payment {
   id                    String        @id @default(uuid())
   userId                String        @map("user_id")
   subscriptionId        String?       @map("subscription_id")
+  planId                String?       @map("plan_id")
+  // Referencia propia generada al iniciar el checkout (antes de que exista transacción en
+  // Wompi); el webhook la usa para encontrar este Payment ya que la trae de vuelta intacta.
+  reference             String?       @unique
   amount                Decimal       @db.Decimal(10, 2)
   currency              String        @default("USD")
   status                PaymentStatus @default(PENDING)
@@ -542,6 +560,7 @@ model Payment {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  plan         Plan?         @relation(fields: [planId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@map("payments")
@@ -714,8 +733,23 @@ model WatchParty {
   episode      Episode?                @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   event        Event?                  @relation(fields: [eventId], references: [id], onDelete: Cascade)
   participants WatchPartyParticipant[]
+  messages     WatchPartyMessage[]
 
   @@map("watch_parties")
+}
+
+model WatchPartyMessage {
+  id           String   @id @default(uuid())
+  watchPartyId String   @map("watch_party_id")
+  userId       String   @map("user_id")
+  body         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  watchParty WatchParty @relation(fields: [watchPartyId], references: [id], onDelete: Cascade)
+  user       User       @relation("WatchPartyMessageSender", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([watchPartyId, createdAt])
+  @@map("watch_party_messages")
 }
 
 model WatchPartyParticipant {

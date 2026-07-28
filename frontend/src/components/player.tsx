@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Hls from 'hls.js';
+import { RotateCcw } from 'lucide-react';
 import { usePlaybackHeartbeat } from '@/hooks/use-playback-heartbeat';
+import { useHlsPlayer } from '@/hooks/use-hls-player';
+import { QualityMenu } from '@/components/quality-menu';
 import { cn } from '@/lib/utils';
 import type { MediaTrack } from '@/lib/api/types';
 
@@ -29,27 +31,9 @@ export function Player({
 }: PlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const heartbeat = usePlaybackHeartbeat();
-
-  // Carga del stream: HLS nativo en Safari, hls.js en el resto.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    let hls: Hls | undefined;
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = src;
-    } else if (Hls.isSupported()) {
-      hls = new Hls();
-      hls.loadSource(src);
-      hls.attachMedia(video);
-    }
-
-    if (initialProgressSeconds) {
-      video.currentTime = initialProgressSeconds;
-    }
-
-    return () => hls?.destroy();
-  }, [src, initialProgressSeconds]);
+  const { levels, currentLevel, setLevel, error, retry } = useHlsPlayer(videoRef, src, {
+    initialProgressSeconds,
+  });
 
   // Heartbeat periódico + al pausar, alimentando WatchHistory ("continuar viendo").
   useEffect(() => {
@@ -79,23 +63,42 @@ export function Player({
   }, [profileId, movieId, episodeId]);
 
   return (
-    <video
-      ref={videoRef}
-      controls
-      className={cn('aspect-video w-full rounded-lg bg-black', className)}
-    >
-      {mediaTracks
-        .filter((track) => track.type === 'SUBTITLE')
-        .map((track) => (
-          <track
-            key={track.id}
-            kind="subtitles"
-            src={track.url}
-            srcLang={track.language}
-            label={track.label ?? track.language}
-            default={track.isDefault}
-          />
-        ))}
-    </video>
+    <div className={cn('relative overflow-hidden bg-black', className ?? 'aspect-video w-full rounded-lg')}>
+      <video ref={videoRef} controls className="h-full w-full object-contain">
+        {mediaTracks
+          .filter((track) => track.type === 'SUBTITLE')
+          .map((track) => (
+            <track
+              key={track.id}
+              kind="subtitles"
+              src={track.url}
+              srcLang={track.language}
+              label={track.label ?? track.language}
+              default={track.isDefault}
+            />
+          ))}
+      </video>
+
+      <QualityMenu
+        levels={levels}
+        currentLevel={currentLevel}
+        onSelect={setLevel}
+        className="absolute top-4 right-4"
+      />
+
+      {error && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 text-center">
+          <p className="text-lg font-medium text-white">No se pudo cargar el video</p>
+          <button
+            type="button"
+            onClick={retry}
+            className="flex items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+          >
+            <RotateCcw className="size-4" />
+            Reintentar
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

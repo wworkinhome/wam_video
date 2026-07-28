@@ -47,4 +47,8 @@ export class CreateChannelDto {
   @IsOptional()
   @IsBoolean()
   timeshiftEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  catchupUrlTemplate?: string;
 }

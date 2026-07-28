@@ -115,6 +115,9 @@ export interface Channel {
   dvrEnabled: boolean;
   catchupWindowHours: number | null;
   timeshiftEnabled: boolean;
+  catchupUrlTemplate: string | null;
+  streamStatus: 'ok' | 'broken' | null;
+  streamCheckedAt: string | null;
 }
 
 export interface EpgProgram {
@@ -196,6 +199,28 @@ export interface Plan {
   isActive: boolean;
 }
 
+export interface Subscription {
+  id: string;
+  userId: string;
+  planId: string;
+  status: 'TRIALING' | 'ACTIVE' | 'PAST_DUE' | 'CANCELED' | 'EXPIRED';
+  startDate: string;
+  endDate: string | null;
+  autoRenew: boolean;
+  plan?: Plan;
+}
+
+export interface Payment {
+  id: string;
+  amount: string;
+  currency: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+  provider: string;
+  paidAt: string | null;
+  createdAt: string;
+  plan?: Plan | null;
+}
+
 export interface UserPlanSummary {
   subscriptionId: string;
   planId: string;
@@ -232,6 +257,25 @@ export interface WatchParty {
   startedAt: string | null;
   endedAt: string | null;
   participants?: { userId: string; joinedAt: string }[];
+}
+
+export interface WatchPartyMessage {
+  id: string;
+  body: string;
+  createdAt: string;
+  userId: string;
+  userName: string;
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  channel: 'PUSH' | 'EMAIL' | 'IN_APP';
+  type: string;
+  title: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
 }
 
 export class ApiError extends Error {

@@ -25,6 +25,11 @@ export class WatchPartyController {
     return this.watchPartyService.findOne(id);
   }
 
+  @Get(':id/messages')
+  listMessages(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.watchPartyService.listMessages(user.id, id);
+  }
+
   @Post(':id/join')
   @HttpCode(HttpStatus.OK)
   join(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {

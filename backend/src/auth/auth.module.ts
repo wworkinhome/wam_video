@@ -21,6 +21,6 @@ import { TenantAccessService } from './tenant-access.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, TenantAccessService],
-  exports: [TenantAccessService],
+  exports: [TenantAccessService, JwtModule],
 })
 export class AuthModule {}

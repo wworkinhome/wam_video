@@ -6,13 +6,21 @@ import { toast } from 'sonner';
 import { Trash2 } from 'lucide-react';
 import { clientFetch } from '@/lib/api/client';
 import { Button } from '@/components/ui/button';
+import { useConfirmDialog } from '@/components/confirm-dialog';
 
 export function DeleteSeriesButton({ id, title }: { id: string; title: string }) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   async function handleDelete() {
-    if (!confirm(`¿Eliminar la serie "${title}" y todo su contenido (temporadas/episodios)? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: `¿Eliminar "${title}"?`,
+      description: 'Se borra junto con todo su contenido (temporadas/episodios). Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      destructive: true,
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await clientFetch(`/series/${id}`, { method: 'DELETE' });
@@ -26,16 +34,19 @@ export function DeleteSeriesButton({ id, title }: { id: string; title: string })
   }
 
   return (
-    <Button
-      type="button"
-      size="icon-sm"
-      variant="ghost"
-      disabled={deleting}
-      onClick={handleDelete}
-      className="text-white/50 hover:bg-destructive/10 hover:text-destructive"
-      aria-label={`Eliminar ${title}`}
-    >
-      <Trash2 className="size-4" />
-    </Button>
+    <>
+      <Button
+        type="button"
+        size="icon-sm"
+        variant="ghost"
+        disabled={deleting}
+        onClick={handleDelete}
+        className="text-white/50 hover:bg-destructive/10 hover:text-destructive"
+        aria-label={`Eliminar ${title}`}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+      {ConfirmDialog}
+    </>
   );
 }

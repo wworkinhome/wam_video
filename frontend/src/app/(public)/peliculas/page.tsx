@@ -4,6 +4,7 @@ import { MovieCard } from '@/components/movie-card';
 import { HeroBanner } from '@/components/hero-banner';
 import { MediaRow } from '@/components/media-row';
 import { ContinueWatchingRow } from '@/components/continue-watching-row';
+import { RecommendedMoviesRow } from '@/components/recommended-row';
 import { getActiveProfile } from '@/lib/auth/active-profile';
 
 export default async function MoviesPage() {
@@ -40,7 +41,7 @@ export default async function MoviesPage() {
     return (
       <MediaRow key={title} title={title} href={href}>
         {items.map((movie) => (
-          <div key={movie.id} className="w-48 shrink-0 sm:w-56 md:w-64">
+          <div key={movie.id} className="w-32 shrink-0 sm:w-40 md:w-48">
             <MovieCard movie={movie} />
           </div>
         ))}
@@ -54,6 +55,7 @@ export default async function MoviesPage() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-8">
         {activeProfile && <ContinueWatchingRow profileId={activeProfile.id} kind="movie" />}
+        {activeProfile && <RecommendedMoviesRow profileId={activeProfile.id} />}
 
         {Array.from(byGenre.entries()).map(([genreName, items]) =>
           renderRow(`Películas de ${genreName}`, items),

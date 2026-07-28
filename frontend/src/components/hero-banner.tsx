@@ -7,6 +7,7 @@ import { Play, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MovieInfoModal } from '@/components/movie-info-modal';
 import { gradientFor } from '@/lib/gradient';
+import { FAST_START_HLS_CONFIG } from '@/lib/hls-config';
 import { cn } from '@/lib/utils';
 import type { Movie } from '@/lib/api/types';
 
@@ -40,7 +41,7 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
       video.src = movie.trailerUrl;
       video.play().catch(() => {});
     } else if (Hls.isSupported()) {
-      const hls = new Hls();
+      const hls = new Hls(FAST_START_HLS_CONFIG);
       hlsRef.current = hls;
       hls.loadSource(movie.trailerUrl);
       hls.attachMedia(video);
@@ -71,7 +72,7 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
           alt=""
           className={cn(
             'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-            videoReady ? 'opacity-0' : 'animate-in fade-in opacity-100',
+            videoReady ? 'opacity-0' : 'animate-in fade-in animate-ken-burns opacity-100',
           )}
         />
       )}
@@ -84,20 +85,20 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
           playsInline
           className={cn(
             'absolute inset-0 h-full w-full object-cover transition-opacity duration-700',
-            videoReady ? 'opacity-100' : 'opacity-0',
+            videoReady ? 'animate-ken-burns opacity-100' : 'opacity-0',
           )}
         />
       )}
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/20 to-red-950/20" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/90 via-black/30 to-transparent" />
 
       {videoReady && (
         <button
           type="button"
           onClick={() => setMuted((m) => !m)}
           aria-label={muted ? 'Activar sonido' : 'Silenciar'}
-          className="absolute right-4 bottom-6 z-10 flex size-10 items-center justify-center rounded-full border border-white/30 bg-black/40 text-white backdrop-blur-sm transition-colors hover:bg-black/60 sm:right-8"
+          className="absolute right-4 bottom-6 z-10 flex size-10 items-center justify-center rounded-full border border-white/30 bg-[#0e0b0b]/40 text-white backdrop-blur-sm transition-colors hover:bg-[#0e0b0b]/60 sm:right-8"
         >
           {muted ? <VolumeX className="size-5" /> : <Volume2 className="size-5" />}
         </button>
@@ -105,8 +106,8 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
 
       <div className="relative w-full px-4 pb-16 sm:px-8">
         <div className="mx-auto max-w-7xl">
-          <span className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-red-600/60 bg-red-600/10 px-3 py-1 text-xs font-semibold tracking-wide text-red-500 uppercase">
-            <span className="size-1.5 rounded-full bg-red-500" />
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+            <span className="size-1.5 rounded-full bg-white" />
             Destacado
           </span>
           <h1 className="max-w-xl text-4xl font-bold text-white drop-shadow-lg sm:text-6xl">{movie.title}</h1>
@@ -134,7 +135,7 @@ export function HeroBanner({ movies, activeProfileId }: { movies: Movie[]; activ
                   onClick={() => setActive(i)}
                   className={cn(
                     'h-1.5 rounded-full transition-all',
-                    i === active ? 'w-6 bg-red-600' : 'w-1.5 bg-white/30 hover:bg-white/50',
+                    i === active ? 'w-6 bg-primary' : 'w-1.5 bg-white/30 hover:bg-white/50',
                   )}
                 />
               ))}

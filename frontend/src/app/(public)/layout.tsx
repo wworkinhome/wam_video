@@ -5,7 +5,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   return (
     <>
       <SiteHeader />
-      <main className="flex-1 bg-black pt-20">{children}</main>
+      <main className="flex-1 bg-[#0e0b0b]">{children}</main>
       <SiteFooter />
     </>
   );

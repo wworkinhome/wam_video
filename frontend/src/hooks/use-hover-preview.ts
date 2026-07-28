@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Hls from 'hls.js';
+import { FAST_START_HLS_CONFIG } from '@/lib/hls-config';
 
 const HOVER_INTENT_MS = 350;
 
@@ -36,16 +37,16 @@ export function useHoverPreview(videoUrl: string | null | undefined) {
       const video = videoRef.current;
       if (!video) return;
 
+      video.addEventListener('playing', () => setPreviewing(true), { once: true });
+
       if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = videoUrl;
         video.play().catch(() => {});
-        setPreviewing(true);
       } else if (Hls.isSupported()) {
-        const hls = new Hls();
+        const hls = new Hls(FAST_START_HLS_CONFIG);
         hlsRef.current = hls;
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           video.play().catch(() => {});
-          setPreviewing(true);
         });
         hls.on(Hls.Events.ERROR, (_event, data) => {
           if (data.fatal) stop();

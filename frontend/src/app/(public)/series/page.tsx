@@ -4,6 +4,7 @@ import { SeriesCard } from '@/components/series-card';
 import { SeriesHeroBanner } from '@/components/series-hero-banner';
 import { MediaRow } from '@/components/media-row';
 import { ContinueWatchingRow } from '@/components/continue-watching-row';
+import { RecommendedSeriesRow } from '@/components/recommended-row';
 import { getActiveProfile } from '@/lib/auth/active-profile';
 
 export default async function SeriesListPage() {
@@ -40,7 +41,7 @@ export default async function SeriesListPage() {
     return (
       <MediaRow key={title} title={title} href={href}>
         {items.map((series) => (
-          <div key={series.id} className="w-48 shrink-0 sm:w-56 md:w-64">
+          <div key={series.id} className="w-32 shrink-0 sm:w-40 md:w-48">
             <SeriesCard series={series} />
           </div>
         ))}
@@ -54,6 +55,7 @@ export default async function SeriesListPage() {
 
       <div className="mx-auto w-full max-w-7xl px-4 pt-10 sm:px-8">
         {activeProfile && <ContinueWatchingRow profileId={activeProfile.id} kind="episode" />}
+        {activeProfile && <RecommendedSeriesRow profileId={activeProfile.id} />}
 
         {Array.from(byGenre.entries()).map(([genreName, items]) =>
           renderRow(`Series de ${genreName}`, items),

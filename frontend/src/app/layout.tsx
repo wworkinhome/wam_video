@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Lato } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SwRegister } from "@/components/sw-register";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const lato = Lato({
+  variable: "--font-lato",
+  weight: ["100", "300", "400", "700", "900"],
   subsets: ["latin"],
 });
 
@@ -34,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#000000",
+  themeColor: "#0e0b0b",
 };
 
 export default function RootLayout({
@@ -45,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
+      className={`${lato.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <QueryProvider>

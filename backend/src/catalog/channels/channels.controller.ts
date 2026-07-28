@@ -20,6 +20,7 @@ import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
 import { ListChannelsDto } from './dto/list-channels.dto';
+import { ImportChannelsDto } from './dto/import-channels.dto';
 
 @Controller('channels')
 export class ChannelsController {
@@ -40,6 +41,13 @@ export class ChannelsController {
   @Permissions('channels.manage')
   create(@Body() dto: CreateChannelDto, @CurrentUser() user: AuthenticatedUser) {
     return this.channelsService.create(dto, user);
+  }
+
+  @Post('import')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('channels.manage')
+  importFromM3U(@Body() dto: ImportChannelsDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.channelsService.importFromM3U(dto, user);
   }
 
   @Patch(':id')

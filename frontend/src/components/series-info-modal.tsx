@@ -64,10 +64,10 @@ export function SeriesInfoModal({ series, activeProfileId }: { series: Series; a
       </DialogTrigger>
 
       <DialogPortal>
-        <DialogOverlay className="bg-black/70" />
+        <DialogOverlay className="bg-[#0e0b0b]/70" />
         <DialogContent
           showCloseButton
-          className="max-w-2xl gap-0 overflow-hidden rounded-xl border-none bg-[#141414] p-0 sm:max-w-3xl"
+          className="max-w-2xl gap-0 overflow-hidden rounded-xl border-none bg-card p-0 sm:max-w-3xl"
         >
           <div
             className={cn(
@@ -79,7 +79,7 @@ export function SeriesInfoModal({ series, activeProfileId }: { series: Series; a
               // eslint-disable-next-line @next/next/no-img-element
               <img src={shown.backdropUrl} alt="" className="h-full w-full object-cover" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-[#141414]/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
 
             <div className="absolute inset-x-0 bottom-0 flex flex-col gap-3 p-5 sm:p-6">
               <h2 className="text-2xl font-bold text-white drop-shadow-lg sm:text-3xl">{shown.title}</h2>
@@ -99,7 +99,7 @@ export function SeriesInfoModal({ series, activeProfileId }: { series: Series; a
 
           <div className="flex flex-col gap-4 p-5 sm:p-6">
             <div className="flex flex-wrap items-center gap-2">
-              {shown.isPremium && <Badge>Premium</Badge>}
+              {shown.isPremium && <Badge className="bg-accent-glow text-accent-glow-foreground">Premium</Badge>}
               {shown.genres?.map(({ genre }) => (
                 <Badge key={genre.id} variant="secondary">
                   {genre.name}
